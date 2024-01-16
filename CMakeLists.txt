@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.23)
 project(AGtree)
 
-#set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mavx -Wall -march=native")
 
 set(distFunc L2)  # 这里设置distFunc的值，可以根据需要修改L2, ED

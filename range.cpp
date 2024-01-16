@@ -18,6 +18,7 @@ int main(int argc, char **argv) {
 
     float *distance = (float *)calloc(db->num_data, sizeof(float));
     vector<float> ans_dis;
+    int total_ans = 0;
     AGtree* agtree = new AGtree(db);
 
 
@@ -44,7 +45,8 @@ int main(int argc, char **argv) {
 //        for (int j = 0; j < ans_dis.size(); j ++ ) {
 //            cout << ans_dis[j] << " " ;
 //        }
-        cout << ans_dis.size() << " ";
+        cout << i + 1 << "\t" << ans_dis.size() << "\t";
+        total_ans += ans_dis.size();
         print_per_query_time
         ans_dis.clear();
     }
@@ -52,5 +54,6 @@ int main(int argc, char **argv) {
     print_search_time
     print_crack_time
     print_total_time
+    cout << "Total ans " << total_ans << endl;
     cout << cnt_calc_dis << endl;
 }

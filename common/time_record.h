@@ -1,23 +1,30 @@
 #pragma once
 
-#include <ctime>
+#include <chrono>
+#define ClockType std::chrono::high_resolution_clock
+#define MicroSeconds std::chrono::microseconds
 
-clock_t begin_total, end_total, begin_per_query, end_per_query;
-#define total_start begin_total = clock();
-#define total_end end_total = clock() - begin_total;
-#define print_total_time cout << "Total time " << (double)end_total / CLOCKS_PER_SEC << endl;
-#define per_query_start begin_per_query = clock();
-#define per_query_end end_per_query = clock() - begin_per_query;
-#define print_per_query_time cout << "Per query time " << (double)end_per_query / CLOCKS_PER_SEC << endl;
+ClockType::time_point total_begin, per_query_begin;
+long total_time, per_query_time;
+#define total_start total_begin = ClockType::now();
+#define total_end total_time = std::chrono::duration_cast<MicroSeconds>(ClockType::now() - total_begin).count();
+#define print_total_time cout << "Total time " << (double)total_time / MicroSeconds::period::den << endl;
 
-clock_t begin_crack, end_crack, total_crack;
-#define crack_start begin_crack = clock();
-#define crack_end end_crack = clock() - begin_crack, total_crack += end_crack;
-#define print_crack_time cout << "crack time " << (double)total_crack / CLOCKS_PER_SEC << endl;
+#define per_query_start per_query_begin = ClockType::now();
+#define per_query_end per_query_time = std::chrono::duration_cast<MicroSeconds>(ClockType::now() - per_query_begin).count();
+#define print_per_query_time cout << "Per query time " << (double)per_query_time / MicroSeconds::period::den << endl;
 
-clock_t begin_search, end_search, total_search;
-#define search_start begin_search = clock();
-#define search_end end_search = clock() - begin_search, total_search += end_search;
-#define print_search_time cout << "search time " << (double)total_search / CLOCKS_PER_SEC << endl;
+ClockType::time_point crack_begin;
+long crack_time, total_crack_time;
+#define crack_start crack_begin = ClockType::now();
+#define crack_end crack_time = std::chrono::duration_cast<MicroSeconds>(ClockType::now() - crack_begin).count(), total_crack_time += crack_time;
+#define print_crack_time cout << "crack time " << (double)total_crack_time / MicroSeconds::period::den << endl;
+
+ClockType::time_point search_begin;
+long search_time, total_search_time;
+#define search_start search_begin = ClockType::now();
+#define search_end search_time = std::chrono::duration_cast<MicroSeconds>(ClockType::now() - search_begin).count(), total_search_time += search_time;
+#define print_search_time cout << "search time " << (double)total_search_time / MicroSeconds::period::den << endl;
+
 
 unsigned long cnt_calc_dis = 0;
