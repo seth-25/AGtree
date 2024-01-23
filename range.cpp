@@ -40,7 +40,9 @@ int main(int argc, char **argv) {
     total_start
     for (int i = 0; i < db->num_queries; i ++ ) {
         per_query_start
-        agtree->search(agtree->root, db->queries[i], db->radius[i], i, distance, ans_dis);
+//        agtree->search(agtree->root, db->queries[i], db->radius[i], i, distance, ans_dis);
+//        agtree->searchMany(agtree->root, db->queries[i], db->radius[i], i, distance, ans_dis);
+        agtree->searchCache(agtree->root, db->queries[i], db->radius[i], i, distance, ans_dis);
         per_query_end
 //        for (int j = 0; j < ans_dis.size(); j ++ ) {
 //            cout << ans_dis[j] << " " ;

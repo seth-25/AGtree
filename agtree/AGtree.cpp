@@ -49,6 +49,8 @@ AGtree::AGtree(DB *db_) : db(db_) {
 //    }
 
     root = new Node(0, db->num_data - 1, max_pivot_cnt);
+    root->is_root = true;
+    root->cache_dist.resize(db->num_data, 0);
 }
 
 void AGtree::crackInTwo(Node *node, float *query, float query_r, float *&dis, vector<float>& ans_dis) {
@@ -159,7 +161,7 @@ void AGtree::selectPivot(Node *node, float* query) {
     }
 }
 
-void AGtree::crackInMany(Node *node, float *query, float query_r, float *&dis, vector<float>& ans_dis) {
+void AGtree::crackInMany(Node *node, float *query, float query_r, vector<float>& ans_dis) {
     int pivot_cnt = node->pivot_cnt;
     node->is_leaf = false;
     node->min_dist.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
@@ -167,11 +169,10 @@ void AGtree::crackInMany(Node *node, float *query, float query_r, float *&dis, v
 
     selectPivot(node, query);
 
-    vector<float> data_dis;
+    vector<float> data_dis(pivot_cnt);
     vector<vector<int>> pivot_data(pivot_cnt);
     int data_cnt = node->end - node->start + 1;
     for (int i = 0; i < data_cnt; i ++ ) {
-        data_dis.resize(pivot_cnt, FLT_MAX);
         for (int j = 0; j < pivot_cnt; j ++ ) {
             data_dis[j] = dist(db->dimension, db->data[node->start + i], node->pivots[j]);
             if (j == 0) {   // pivot is query
@@ -201,6 +202,58 @@ void AGtree::crackInMany(Node *node, float *query, float query_r, float *&dis, v
         next_pivot_cnt = max(min_pivot_cnt, next_pivot_cnt);
         next_pivot_cnt = min(max_pivot_cnt, next_pivot_cnt);
         node->children.emplace_back(new Node(new_node_start, new_node_end, next_pivot_cnt));
+    }
+    for (int i = node->start; i <= node->end; i ++ ) {
+        db->data[i] = data_tmp[i - node->start];
+    }
+}
+
+void AGtree::crackInManyCache(Node *node, float *query, float query_r, vector<float>& ans_dis) {
+    int pivot_cnt = node->pivot_cnt;
+    node->is_leaf = false;
+//    node->pivot_data_dist.clear();
+//    node->pivot_data_dist.shrink_to_fit();
+    vector<float>().swap(node->cache_dist);
+    node->min_dist.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
+    node->max_dist.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
+
+    selectPivot(node, query);
+
+    vector<float> data_dis(pivot_cnt);
+    vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id
+    vector<vector<float>> pivot_data_dist(pivot_cnt);    // 数据到分配的支枢点的距离
+    int data_cnt = node->end - node->start + 1;
+    for (int i = 0; i < data_cnt; i ++ ) {
+        for (int j = 0; j < pivot_cnt; j ++ ) {
+            data_dis[j] = dist(db->dimension, db->data[node->start + i], node->pivots[j]);
+            if (j == 0) {   // pivot is query
+                if (data_dis[j] < query_r) {
+                    ans_dis.emplace_back(data_dis[j]);
+                }
+            }
+        }
+        int closest_pivot = (int)(min_element(data_dis.begin(), data_dis.end()) - data_dis.begin());
+        pivot_data[closest_pivot].emplace_back(node->start + i);
+        pivot_data_dist[closest_pivot].emplace_back(data_dis[closest_pivot]);
+        for (int j = 0; j < pivot_cnt; j ++ ) {
+            node->max_dist[j][closest_pivot] = max(node->max_dist[j][closest_pivot], data_dis[j]);    // 各个pivot到closest_pivot中最远的obj的距离
+            node->min_dist[j][closest_pivot] = min(node->min_dist[j][closest_pivot], data_dis[j]);    // 各个pivot到closest_pivot中最近的obj的距离
+        }
+    }
+
+    float *data_tmp[data_cnt];
+    int tmp_len = 0;
+    for (int i = 0; i < pivot_cnt; i++) {
+        int new_node_start = tmp_len + node->start;
+        for (int data_id: pivot_data[i]) {
+            data_tmp[tmp_len] = db->data[data_id];
+            tmp_len++;
+        }
+        int new_node_end = tmp_len + node->start - 1;
+        int next_pivot_cnt = (int)pivot_data[i].size() * avg_pivot_cnt * pivot_cnt / data_cnt;
+        next_pivot_cnt = max(min_pivot_cnt, next_pivot_cnt);
+        next_pivot_cnt = min(max_pivot_cnt, next_pivot_cnt);
+        node->children.emplace_back(new Node(new_node_start, new_node_end, next_pivot_cnt, node->pivots[i], pivot_data_dist[i]));
     }
     for (int i = node->start; i <= node->end; i ++ ) {
         db->data[i] = data_tmp[i - node->start];
@@ -247,55 +300,98 @@ void AGtree::search(Node *node, float* query, float query_r, int query_id, float
         }
         else {
             crack_start
-//            crackInTwo(node, query, query_r, distance, ans_dis);
-            crackInMany(node, query, query_r, distance, ans_dis);
+            crackInTwo(node, query, query_r, distance, ans_dis);
             crack_end
         }
     }
 }
 
-//void AGtree::searchCache(Node *node, float* query, float query_r, int query_id, float *&distance, vector<float>& ans_dis) {
-//    if (!node->is_leaf) {
-//        size_t n = node->pivot_cnt;
-//        float dis[n];
-//        search_start
-//        for (size_t i = 0; i < n; i ++ ) {
-//            dis[i] = dist(db->dimension, node->pivots[i], query);
-//        }
-//        search_end
-//        for (size_t i = 0; i < n; i ++ ) {
-//            bool flag = true;
-//            for (size_t j = 0; flag && j < n; j ++ ) {
-//                flag &= (node->max_dist[j][i] >= dis[j] - query_r);
-//                flag &= (node->min_dist[j][i] <= dis[j] + query_r);
-//            }
-//            if (flag) {
-//                auto& child = node->children[i];
-//                search(child, query, query_r, query_id, distance, ans_dis);
-//            }
-//        }
-//    }
-//    else {
-//        search_start
-//        for (int i = node->start; i <= node->end; i ++ ) {
-//            distance[i] = dist(db->dimension, db->data[i], query);
-//        }
-//        search_end
-//        cnt_calc_dis += node->end - node->start + 1;
-//        if (node->end - node->start + 1 <= db->crack_threshold) {
-//            search_start
-//            for (int i = node->start; i <= node->end; i ++ ) {
-//                if (distance[i] <= query_r) {
-//                    ans_dis.emplace_back(distance[i]);
-//                }
-//            }
-//            search_end
-//        }
-//        else {
-//            crack_start
-////            crackInTwo(node, query, query_r, distance, ans_dis);
-//            crackInMany(node, query, query_r, distance, ans_dis);
-//            crack_end
-//        }
-//    }
-//}
+void AGtree::searchMany(Node *node, float* query, float query_r, int query_id, float *&distance, vector<float>& ans_dis) {
+    if (!node->is_leaf) {
+        size_t n = node->pivot_cnt;
+        float dis[n];
+        search_start
+        for (size_t i = 0; i < n; i ++ ) {
+            dis[i] = dist(db->dimension, node->pivots[i], query);
+        }
+        search_end
+        for (size_t i = 0; i < n; i ++ ) {
+            bool flag = true;
+            for (size_t j = 0; flag && j < n; j ++ ) {
+                flag &= (node->max_dist[j][i] >= dis[j] - query_r);
+                flag &= (node->min_dist[j][i] <= dis[j] + query_r);
+            }
+            if (flag) {
+                auto& child = node->children[i];
+                search(child, query, query_r, query_id, distance, ans_dis);
+            }
+        }
+    }
+    else {
+        if (node->end - node->start + 1 <= db->crack_threshold) {
+            search_start
+            for (int i = node->start; i <= node->end; i ++ ) {
+                distance[i] = dist(db->dimension, db->data[i], query);
+            }
+            cnt_calc_dis += node->end - node->start + 1;
+            for (int i = node->start; i <= node->end; i ++ ) {
+                if (distance[i] <= query_r) {
+                    ans_dis.emplace_back(distance[i]);
+                }
+            }
+            search_end
+        }
+        else {
+            crack_start
+            crackInMany(node, query, query_r, ans_dis);
+            crack_end
+        }
+    }
+}
+
+
+
+void AGtree::searchCache(Node *node, float* query, float query_r, int query_id, float *&distance, vector<float>& ans_dis) {
+    if (!node->is_leaf) {
+        size_t n = node->pivot_cnt;
+        float dis[n];
+        search_start
+        for (size_t i = 0; i < n; i ++ ) {
+            dis[i] = dist(db->dimension, node->pivots[i], query);
+        }
+        search_end
+        for (size_t i = 0; i < n; i ++ ) {
+            bool flag = true;
+            for (size_t j = 0; flag && j < n; j ++ ) {
+                flag &= (node->max_dist[j][i] >= dis[j] - query_r);
+                flag &= (node->min_dist[j][i] <= dis[j] + query_r);
+            }
+            if (flag) {
+                auto& child = node->children[i];
+                searchCache(child, query, query_r, query_id, distance, ans_dis);
+            }
+        }
+    }
+    else {
+        float pq_dist;
+        if (!node->is_root) pq_dist = dist(db->dimension, node->parent, query);
+        else pq_dist = 0;
+        if (node->end - node->start + 1 <= db->crack_threshold) {
+            search_start
+            for (int i = node->start; i <= node->end; i ++ ) {
+                if (fabs(node->cache_dist[i - node->start] - pq_dist) > query_r) continue;
+                distance[i] = dist(db->dimension, db->data[i], query);
+                cnt_calc_dis ++;
+                if (distance[i] <= query_r) {
+                    ans_dis.emplace_back(distance[i]);
+                }
+            }
+            search_end
+        }
+        else {
+            crack_start
+            crackInManyCache(node, query, query_r, ans_dis);
+            crack_end
+        }
+    }
+}
