@@ -27,4 +27,7 @@ long search_time, total_search_time;
 #define print_search_time cout << "search time " << (double)total_search_time / MicroSeconds::period::den << endl;
 
 
-unsigned long cnt_calc_dis = 0;
+unsigned long search_dis_cnt = 0;
+unsigned long crack_dis_cnt = 0;
+unsigned long total_search_dis_cnt = 0;
+unsigned long total_crack_dis_cnt = 0;

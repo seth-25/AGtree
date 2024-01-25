@@ -53,7 +53,7 @@ public:
     void crackInManyCache(Node *node, float *query, float query_r, std::vector<float> &ans_dis);
 
     void
-    searchCache(Node *node, float *query, float query_r, int query_id, float *&distance, std::vector<float> &ans_dis);
+    searchCache(Node *node, float *query, float query_r, int query_id, float pq_dist, float *&distance, std::vector<float> &ans_dis);
 
     void
     searchMany(Node *node, float *query, float query_r, int query_id, float *&distance, std::vector<float> &ans_dis);
