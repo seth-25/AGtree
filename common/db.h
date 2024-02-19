@@ -26,6 +26,7 @@ public:
 
     Method method;
     int crack_threshold;
+    int tree_threshold;
 
     int num_data;
     int num_queries;
@@ -48,10 +49,7 @@ public:
 
 
 namespace common {
-    DB *&the_db() {
-        static auto *db = new DB();
-        return db;
-    }
+    DB *&the_db();
 
     void parse_parameter(int argc, char **argv);
 

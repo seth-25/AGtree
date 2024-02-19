@@ -33,16 +33,26 @@ namespace common {
         std::cout << "-s: " << std::endl;
     }
 
+    DB *&the_db() {
+        static auto *db = new DB();
+        return db;
+    }
+
     void parse_parameter(int argc, char **argv) {
         DB *db = the_db();
         int opt;
-        while ((opt = getopt(argc, argv, "t:s")) > 0) {
+        while ((opt = getopt(argc, argv, "t:T:cs")) > 0) {
             switch (opt) {
                 case 't':
                     db->crack_threshold = atoi(optarg);
                     break;
+                case 'T':
+                    db->tree_threshold = atoi(optarg);
+                    break;
                 case 's':
                     db->method = Method::STANDARD;
+                case 'c':
+                    db->method = Method::CACHE;
                     break;
                 case 'h':
                     usage();

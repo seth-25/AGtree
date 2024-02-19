@@ -1,39 +1,9 @@
 #include <cfloat>
 #include <algorithm>
-#include <complex>
 #include "AGtree.h"
-#include "time_record.h"
+#include "record.h"
 using namespace std;
 
-float l1_distance(int dim, const float *x, const float *y) {
-    float ans = 0, res;
-    for (int i = 0; i < dim; i++) {
-        res = (x[i] - y[i]);
-        if (res < 0) res = -res;
-        ans += res;
-    }
-    return ans;
-}
-
-float l2_distance(int dim, const float *x, const float *y) {
-    float ans = 0, res;
-    int i;
-    for (i = 0; i < dim; i++) {
-        res = (x[i] - y[i]);
-        ans += res * res;
-    }
-    return std::sqrt(ans);
-}
-
-#ifdef ED
-#define dist(dim, data, query)
-#endif
-#ifdef L1
-#define dist(dim, data, query) l1_distance(dim, data, query)
-#endif
-#ifdef L2
-#define dist(dim, data, query) l2_distance(dim, data, query)
-#endif
 
 AGtree::AGtree(DB *db_) : db(db_) {
     avg_pivot_cnt = 5;
@@ -43,13 +13,7 @@ AGtree::AGtree(DB *db_) : db(db_) {
     pivot_dis.resize(3 * max_pivot_cnt, vector<float>(3 * max_pivot_cnt));
     pivot_pos.resize(max_pivot_cnt);
 
-//    data_tmp = new float * [db->num_data];
-//    for (int i = 0; i < db->num_data; i ++ ) {
-//        data_tmp[i] = new float [db->dimension];
-//    }
-
     root = new Node(0, db->num_data - 1, max_pivot_cnt);
-    root->is_root = true;
     root->cache_dist.resize(db->num_data, 0);
 }
 
@@ -123,8 +87,7 @@ void AGtree::crackInTwo(Node *node, float *query, float query_r, float *&dis, ve
     node->children.emplace_back(new Node(j + 1, node->end, 2));
 }
 
-
-void AGtree::search(Node *node, float* query, float query_r, int query_id, float *&distance, vector<float>& ans_dis) {
+void AGtree::search(Node *node, float* query, float query_r, float *&distance, vector<float>& ans_dis) {
     if (!node->is_leaf) {
         size_t n = node->pivot_cnt;
         float dis[n];
@@ -142,7 +105,7 @@ void AGtree::search(Node *node, float* query, float query_r, int query_id, float
             }
             if (flag) {
                 auto& child = node->children[i];
-                search(child, query, query_r, query_id, distance, ans_dis);
+                search(child, query, query_r, distance, ans_dis);
             }
         }
     }
@@ -316,7 +279,7 @@ void AGtree::crackInManyCache(Node *node, float *query, float query_r, vector<fl
         int next_pivot_cnt = (int)pivot_data[i].size() * avg_pivot_cnt * pivot_cnt / data_cnt;
         next_pivot_cnt = max(min_pivot_cnt, next_pivot_cnt);
         next_pivot_cnt = min(max_pivot_cnt, next_pivot_cnt);
-        node->children.emplace_back(new Node(new_node_start, new_node_end, next_pivot_cnt, node->pivots[i], pivot_data_dist[i]));
+        node->children.emplace_back(new Node(new_node_start, new_node_end, next_pivot_cnt, pivot_data_dist[i]));
     }
     for (int i = node->start; i <= node->end; i ++ ) {
         db->data[i] = data_tmp[i - node->start];
@@ -324,7 +287,7 @@ void AGtree::crackInManyCache(Node *node, float *query, float query_r, vector<fl
 }
 
 
-void AGtree::searchMany(Node *node, float* query, float query_r, int query_id, float *&distance, vector<float>& ans_dis) {
+void AGtree::searchMany(Node *node, float* query, float query_r, float *&distance, vector<float>& ans_dis) {
     if (!node->is_leaf) {
         size_t n = node->pivot_cnt;
         float dis[n];
@@ -342,7 +305,7 @@ void AGtree::searchMany(Node *node, float* query, float query_r, int query_id, f
             }
             if (flag) {
                 auto& child = node->children[i];
-                searchMany(child, query, query_r, query_id, distance, ans_dis);
+                searchMany(child, query, query_r, distance, ans_dis);
             }
         }
     }
@@ -370,7 +333,7 @@ void AGtree::searchMany(Node *node, float* query, float query_r, int query_id, f
 
 
 
-void AGtree::searchCache(Node *node, float* query, float query_r, int query_id, float pq_dist, float *&distance, vector<float>& ans_dis) {
+void AGtree::searchCache(Node *node, float* query, float query_r, float pq_dist, float *&distance, vector<float>& ans_dis) {
     if (!node->is_leaf) {
         size_t n = node->pivot_cnt;
         float dis[n];
@@ -388,7 +351,7 @@ void AGtree::searchCache(Node *node, float* query, float query_r, int query_id, 
             }
             if (flag) {
                 auto& child = node->children[i];
-                searchCache(child, query, query_r, query_id, dis[i], distance, ans_dis);
+                searchCache(child, query, query_r, dis[i], distance, ans_dis);
             }
         }
     }
@@ -415,3 +378,4 @@ void AGtree::searchCache(Node *node, float* query, float query_r, int query_id, 
         }
     }
 }
+

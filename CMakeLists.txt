@@ -21,11 +21,17 @@ add_subdirectory(common)
 include_directories(agtree)
 add_subdirectory(agtree)
 
-add_executable(range range.cpp)
-target_link_libraries(range COMMON AGTREE)
+include_directories(mixtree)
+add_subdirectory(mixtree)
+
+add_executable(agtree_range agtree_range.cpp)
+target_link_libraries(agtree_range COMMON AGTREE)
 
 add_executable(linear linear.cpp)
 target_link_libraries(linear COMMON)
+
+add_executable(mixtree_range mixtree_range.cpp)
+target_link_libraries(mixtree_range COMMON MIXTREE)
 
 add_executable(test test.cpp)
 target_link_libraries(test COMMON)

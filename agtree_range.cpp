@@ -1,7 +1,7 @@
 #include <algorithm>
 #include "db.h"
 #include "AGtree.h"
-#include "time_record.h"
+#include "record.h"
 
 using namespace std;
 
@@ -63,9 +63,9 @@ int main(int argc, char **argv) {
     for (int i = 0; i < db->num_queries; i ++ ) {
 //    for (int i = 0; i < 1; i ++ ) {
         per_query_start
-//        agtree->search(agtree->root, db->queries[i], db->radius[i], i, distance, ans_dis);
-//        agtree->searchMany(agtree->root, db->queries[i], db->radius[i], i, distance, ans_dis);
-        agtree->searchCache(agtree->root, db->queries[i], db->radius[i], i, 0, distance, ans_dis);
+//        agtree->search(agtree->root, db->queries[i], db->radius[i], distance, ans_dis);
+//        agtree->searchMany(agtree->root, db->queries[i], db->radius[i], distance, ans_dis);
+        agtree->searchCache(agtree->root, db->queries[i], db->radius[i], 0, distance, ans_dis);
         per_query_end
 //        for (int j = 0; j < ans_dis.size(); j ++ ) {
 //            cout << ans_dis[j] << " " ;
