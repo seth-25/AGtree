@@ -4,23 +4,14 @@
 #include <cstring>
 #include <iostream>
 #include <complex>
+#include <vector>
+#include <queue>
+#include <functional>
 
 enum class Method {
     STANDARD,
     CACHE,
 };
-
-#ifdef ED
-static int func_type = 0;
-#endif
-#ifdef L1
-static int func_type = 1;
-#endif
-#ifdef L2
-static int func_type = 2;
-#endif
-
-
 
 
 inline float l1_distance(int dim, const float *x, const float *y) {
@@ -43,12 +34,20 @@ inline float l2_distance(int dim, const float *x, const float *y) {
     return std::sqrt(ans);
 }
 
+class Node;
 #ifdef ED
-#define dist(dim, data, query)
+static int func_type = 0;
+#define calc_dis(dim, data, query)
 #endif
 #ifdef L1
-#define dist(dim, data, query) l1_distance(dim, data, query)
+static int func_type = 1;
+#define calc_dis(dim, data, query) l1_distance(dim, data, query)
 #endif
 #ifdef L2
-#define dist(dim, data, query) l2_distance(dim, data, query)
+static int func_type = 2;
+#define calc_dis(dim, data, query) l2_distance(dim, data, query)
+typedef std::tuple<float, Node *, Node *> NodeTuple;   // dis node pre_node
+typedef std::pair<float, float *> AnsPair;
+typedef std::priority_queue<NodeTuple, std::vector<NodeTuple>, std::greater<NodeTuple>> NodeHeap;
+typedef std::priority_queue<AnsPair> AnsHeap;
 #endif

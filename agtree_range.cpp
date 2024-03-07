@@ -26,7 +26,7 @@ using namespace std;
 //    total_start
 //    for (int i = 0; i < db->num_queries; i ++ ) {
 //        per_query_start
-//        agtree->searchCache(agtree->root, db->queries[i], db->radius[i], i, distance, ans_dis);
+//        agtree->rangeSearchCache(agtree->root, db->queries[i], db->radius[i], i, distance, ans_dis);
 //        per_query_end
 //        cout << i + 1 << "\t" << ans_dis.size() << "\t";
 //        total_ans += ans_dis.size();
@@ -38,7 +38,7 @@ using namespace std;
 //    print_crack_time
 //    print_total_time
 //    cout << "Total ans " << total_ans << endl;
-//    cout << "search: "<< search_dis_cnt << ", crack: " << crack_dis_cnt << ", total: " << search_dis_cnt + crack_dis_cnt << endl;
+//    cout << "knnSearch: "<< search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
 //}
 
 int main(int argc, char **argv) {
@@ -63,7 +63,7 @@ int main(int argc, char **argv) {
     for (int i = 0; i < db->num_queries; i ++ ) {
 //    for (int i = 0; i < 1; i ++ ) {
         per_query_start
-//        agtree->search(agtree->root, db->queries[i], db->radius[i], distance, ans_dis);
+//        agtree->knnSearch(agtree->root, db->queries[i], db->radius[i], distance, ans_dis);
 //        agtree->searchMany(agtree->root, db->queries[i], db->radius[i], distance, ans_dis);
         agtree->searchCache(agtree->root, db->queries[i], db->radius[i], 0, distance, ans_dis);
         per_query_end
@@ -71,9 +71,9 @@ int main(int argc, char **argv) {
 //            cout << ans_dis[j] << " " ;
 //        }
         cout << i + 1 << "\t" << ans_dis.size() << "\t";
-        cout << "search: "<< search_dis_cnt << ", crack: " << crack_dis_cnt << ", total: " << search_dis_cnt + crack_dis_cnt << endl;
-        total_search_dis_cnt += search_dis_cnt; total_crack_dis_cnt += crack_dis_cnt;
-        search_dis_cnt = 0, crack_dis_cnt = 0;
+        cout << "knnSearch: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
+        total_search_calc_cnt += search_calc_cnt; total_crack_calc_cnt += crack_calc_cnt;
+        search_calc_cnt = 0, crack_calc_cnt = 0;
         total_ans += ans_dis.size();
         print_per_query_time
         ans_dis.clear();
@@ -83,5 +83,5 @@ int main(int argc, char **argv) {
     print_crack_time
     print_total_time
     cout << "Total ans " << total_ans << endl;
-    cout << "search: "<< total_search_dis_cnt << ", crack: " << total_crack_dis_cnt << ", total: " << total_search_dis_cnt + total_crack_dis_cnt << endl;
+    cout << "knnSearch: " << total_search_calc_cnt << ", crack: " << total_crack_calc_cnt << ", total: " << total_search_calc_cnt + total_crack_calc_cnt << endl;
 }

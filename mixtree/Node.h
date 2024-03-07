@@ -18,7 +18,7 @@ public:
     bool is_leaf;
 
     // leaf node
-    std::vector<float> cache_dist; // 到父亲支枢点的距离，只在叶子缓存
+    std::vector<float> cache_dis; // 到父亲支枢点的距离，只在叶子缓存
 };
 
 class VNode : public Node {
@@ -28,12 +28,13 @@ public:
 
     VNode(int start_, int end_, std::vector<float> &cache_dist_) :  // leaf node
             Node(start_, end_, NodeType::VNode, true) {
-        cache_dist.swap(cache_dist_);
+        cache_dis.swap(cache_dist_);
     }
 
     float *pivot;   // only one pivot
     float pivot_r;  // radius of pivot
-    std::vector<Node *> children;
+    Node* left_child;
+    Node* right_child;
 };
 
 class GNode : public Node {
@@ -43,13 +44,13 @@ public:
 
     GNode(int start_, int end_, int pivot_cnt_, std::vector<float> &cache_dist_) :  // leaf node
             Node(start_, end_, NodeType::GNode, true), pivot_cnt(pivot_cnt_) {
-        cache_dist.swap(cache_dist_);
+        cache_dis.swap(cache_dist_);
     }
 
     std::vector<float *> pivots;
     int pivot_cnt;
     std::vector<Node *> children;
 
-    std::vector<std::vector<float>> min_dist;   // min_dist[a][b]：a到b内所有obj中最近的obj的距离
-    std::vector<std::vector<float>> max_dist;   // max_dist[a][b]：a到b内所有obj中最远的obj的距离
+    std::vector<std::vector<float>> min_dis;   // min_dis[a][b]：a到b内所有obj中最近的obj的距离
+    std::vector<std::vector<float>> max_dis;   // max_dis[a][b]：a到b内所有obj中最远的obj的距离
 };

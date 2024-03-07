@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     cout << "Number data : " << db->num_data << endl;
     cout << "Number queries : " << db->num_queries << endl;
 
-    vector<float> ans_dis;
+    AnsHeap ans_dis;
     int total_ans = 0;
     MixTree* mixtree = new MixTree(db);
 
@@ -28,18 +28,21 @@ int main(int argc, char **argv) {
     total_start
     for (int i = 0; i < db->num_queries; i ++ ) {
         per_query_start
-        mixtree->rangeSearch(db->queries[i % db->num_queries], db->radius[i % db->num_queries], ans_dis);
+        mixtree->knnSearch(db->queries[i % db->num_queries], 100, ans_dis);
         per_query_end
-//        for (int j = 0; j < ans_dis.size(); j ++ ) {
-//            cout << ans_dis[j] << " " ;
-//        }
         cout << i + 1 << "\t" << ans_dis.size() << "\t";
+
         cout << "knnSearch: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
         total_search_calc_cnt += search_calc_cnt; total_crack_calc_cnt += crack_calc_cnt;
         search_calc_cnt = 0, crack_calc_cnt = 0;
         total_ans += ans_dis.size();
         print_per_query_time
-        ans_dis.clear();
+        while(!ans_dis.empty()) {
+            cout << ans_dis.top().first << " ";
+            ans_dis.pop();
+        }
+        cout << endl;
+        ans_dis = AnsHeap();
     }
     total_end
 

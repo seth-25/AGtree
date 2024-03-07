@@ -7,15 +7,28 @@ class MixTree {
 public:
     MixTree(DB* db_);
 
-    void search(float *query, float query_r, std::vector<float> &ans_dis);
+    void rangeSearch(float *query, float query_r, std::vector<float> &ans_dis);
+
+    void rangeSearchCache(Node *&node, float *query, float query_r, float pq_dis, std::vector<float> &ans_dis);
 
     void selectPivot(GNode *node, float *query);
 
     void crackVCache(Node *&node, float *query, float query_r, std::vector<float> &ans_dis);
 
-    void crackGInManyCache(Node *&node, float *query, float query_r, std::vector<float> &ans_dis);
+    void crackGCache(Node *&node, float *query, float query_r, std::vector<float> &ans_dis);
 
-    void searchCache(Node *&node, float *query, float query_r, float pq_dist, std::vector<float> &ans_dis);
+
+
+    void knnSearch(float *query, int k, AnsHeap &ans_dis);
+
+    void knnSearchCache(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap);
+
+    void addAns(int k, float dis, float *data, AnsHeap &ans_heap);
+
+    void knnCrackV(Node *node, float *query, int k, AnsHeap &ans_heap);
+
+    void knnCrackG(Node *node, Node* pre_node, float *query, int k, AnsHeap &ans_dis);
+
 
     DB* db;
     Node* root;

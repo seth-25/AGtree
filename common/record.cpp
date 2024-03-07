@@ -7,7 +7,7 @@ long crack_time, total_crack_time;
 ClockType::time_point search_begin;
 long search_time, total_search_time;
 
-unsigned long search_dis_cnt = 0;
-unsigned long crack_dis_cnt = 0;
-unsigned long total_search_dis_cnt = 0;
-unsigned long total_crack_dis_cnt = 0;
+unsigned long search_calc_cnt = 0;
+unsigned long crack_calc_cnt = 0;
+unsigned long total_search_calc_cnt = 0;
+unsigned long total_crack_calc_cnt = 0;

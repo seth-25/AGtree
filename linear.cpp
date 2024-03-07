@@ -20,7 +20,7 @@ int main(int argc, char **argv) {
 
     for (int i = 0; i < db->num_queries; i ++ ) {
         for (int j = 0; j < db->num_data; j ++ ) {
-            float dis = dist(db, db->data[j], db->queries[i]);
+            float dis = calc_dis(db, db->data[j], db->queries[i]);
             if (dis < db->radius[i]) {
                 ans_dis.emplace_back(dis);
             }

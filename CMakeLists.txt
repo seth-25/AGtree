@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.23)
 project(AGtree)
 
 set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mavx -Wall -march=native")
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -mavx -Wall -march=native")
 
 set(distFunc L2)  # 这里设置distFunc的值，可以根据需要修改L2, ED
 #set(distFunc ED)  # 这里设置distFunc的值，可以根据需要修改L2, ED
@@ -32,6 +32,9 @@ target_link_libraries(linear COMMON)
 
 add_executable(mixtree_range mixtree_range.cpp)
 target_link_libraries(mixtree_range COMMON MIXTREE)
+
+add_executable(mixtree_knn mixtree_knn.cpp)
+target_link_libraries(mixtree_knn COMMON MIXTREE)
 
 add_executable(test test.cpp)
 target_link_libraries(test COMMON)
