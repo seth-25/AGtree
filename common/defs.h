@@ -9,7 +9,7 @@
 #include <functional>
 
 enum class Method {
-    STANDARD,
+    SAX,
     CACHE,
 };
 
@@ -51,3 +51,10 @@ typedef std::pair<float, float *> AnsPair;
 typedef std::priority_queue<NodeTuple, std::vector<NodeTuple>, std::greater<NodeTuple>> NodeHeap;
 typedef std::priority_queue<AnsPair> AnsHeap;
 #endif
+
+
+/////////////////////////////// SAX //////////////////////////////////////
+//typedef unsigned short sax_type;  // cardinality = 512
+typedef unsigned char sax_type;  // cardinality = 256
+#define CARDINALITY 256
+#define BIT_CARDINALITY 8

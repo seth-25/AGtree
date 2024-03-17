@@ -18,11 +18,15 @@ add_definitions(-D${distFunc})
 include_directories(common)
 add_subdirectory(common)
 
+include_directories(sax)
+add_subdirectory(sax)
+
 include_directories(agtree)
 add_subdirectory(agtree)
 
 include_directories(mixtree)
 add_subdirectory(mixtree)
+
 
 add_executable(agtree_range agtree_range.cpp)
 target_link_libraries(agtree_range COMMON AGTREE)
@@ -31,10 +35,10 @@ add_executable(linear linear.cpp)
 target_link_libraries(linear COMMON)
 
 add_executable(mixtree_range mixtree_range.cpp)
-target_link_libraries(mixtree_range COMMON MIXTREE)
+target_link_libraries(mixtree_range COMMON MIXTREE SAX)
 
 add_executable(mixtree_knn mixtree_knn.cpp)
-target_link_libraries(mixtree_knn COMMON MIXTREE)
+target_link_libraries(mixtree_knn COMMON MIXTREE SAX)
 
 add_executable(test test.cpp)
 target_link_libraries(test COMMON)

@@ -1,11 +1,16 @@
 #pragma once
+
+#include <unordered_map>
 #include "db.h"
 #include "Node.h"
+#include "sax.h"
 
 
 class MixTree {
 public:
     MixTree(DB* db_);
+
+    ~MixTree();
 
     void rangeSearch(float *query, float query_r, std::vector<float> &ans_dis);
 
@@ -23,12 +28,13 @@ public:
 
     void knnSearchCache(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap);
 
+    void knnSearchSax(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap);
+
     void addAns(int k, float dis, float *data, AnsHeap &ans_heap);
 
     void knnCrackV(Node *node, float *query, int k, AnsHeap &ans_heap);
 
     void knnCrackG(Node *node, Node* pre_node, float *query, int k, AnsHeap &ans_dis);
-
 
     DB* db;
     Node* root;
@@ -39,6 +45,7 @@ public:
     std::vector<float> distance;
     std::vector<int> pivot_pos;
     std::vector<std::vector<float>> pivot_dis;
+    std::unordered_map<float*, sax_type*> sax_map;
 
 };
 

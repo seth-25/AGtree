@@ -20,12 +20,27 @@ MixTree::MixTree(DB *db_): db(db_) {
 
     vector<float> cache_dis(db->num_data, 0);
     root = new VNode(0, db->num_data - 1, cache_dis);
-//    root = new GNode(0, db->num_data - 1, max_pivot_cnt, cache_dis);
+    if (db->method == Method::SAX) {
+        for (int i = 0; i < db->num_data; i ++ ) {
+            sax_type* sax = new sax_type[db->segment];
+            sax_from_ts(db->data[i], sax, db->segment, db->num_per_segment);
+            sax_map[db->data[i]] = sax;
+        }
+    }
 }
+
+MixTree::~MixTree() {
+    if (db->method == Method::SAX) {
+        for (int i = 0; i < db->num_data; i ++ ) {
+            delete sax_map[db->data[i]];
+        }
+    }
+}
+
 
 void MixTree::rangeSearch(float *query, float query_r, std::vector<float> &ans_dis) {
     switch (db->method) {
-        case Method::STANDARD: {
+        case Method::SAX: {
 
         } break;
         case Method::CACHE: {
@@ -45,8 +60,8 @@ void MixTree::knnSearch(float *query, int k, AnsHeap &ans_dis) {
     NodeHeap node_heap;
     node_heap.emplace(0, root, nullptr, 0);
     switch (db->method) {
-        case Method::STANDARD: {
-
+        case Method::SAX: {
+            knnSearchSax(query, k, node_heap, ans_dis);
         } break;
         case Method::CACHE: {
             knnSearchCache(query, k, node_heap, ans_dis);
@@ -154,6 +169,98 @@ void MixTree::addAns(int k, float dis, float* data, AnsHeap &ans_heap) {
     }
 }
 
+void MixTree::knnSearchSax(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap) {
+    float query_paa[db->segment];
+    paa_from_ts(query, query_paa, db->segment, db->num_per_segment);
+    cnt ++; // todo delete
+    while(!node_heap.empty() && (ans_heap.size() < k || get<0>(node_heap.top()) < ans_heap.top().first)) {
+        NodeTuple node_tuple = node_heap.top();
+        Node *node = get<1>(node_tuple);
+        float pq_dis = get<3>(node_tuple);
+        if (node->is_leaf) {
+            if (node->end - node->start + 1 <= db->crack_threshold) {
+                for (int i = node->start; i <= node->end; i++) {
+                    if (ans_heap.size() >= k &&
+                        fabs(node->cache_dis[i - node->start] - pq_dis) > ans_heap.top().first) {  // todo 4 case(L2)
+                        continue;
+                    }
+                    sax_type * sax = sax_map[db->data[i]];
+                    float sax_dist = min_dist_paa_to_sax(query_paa, sax, db->segment, db->num_per_segment);
+                    if (ans_heap.size() >= k && sax_dist > ans_heap.top().first) continue;
+
+                    distance[i] = calc_dis(db->dimension, query, db->data[i]);
+                    if (cnt == 998 && !ans_heap.empty())
+                        cout << fabs(node->cache_dis[i - node->start] - pq_dis) << " " << sax_dist << " " << distance[i] << " "
+                             << ans_heap.top().first << " " << ans_heap.size() << endl;
+                    search_calc_cnt++;
+                    addAns(k, distance[i], db->data[i], ans_heap);
+                }
+            } else {
+                if (node->end - node->start + 1 <= db->tree_threshold) {
+                    crack_start
+                    cout << "G crack" << endl;
+                    knnCrackG(node, get<2>(node_tuple), query, k, ans_heap);
+                    crack_end
+                } else {
+                    crack_start
+                    cout << "V crack" << endl;
+                    knnCrackV(node, query, k, ans_heap);
+                    crack_end
+                }
+            }
+            node_heap.pop();
+        } else {
+            if (node->type == NodeType::VNode) {
+//                cout << "V node" << endl;
+                VNode *v_node = (VNode *) node;
+                node_heap.pop();
+                float dis = calc_dis(db->dimension, v_node->pivot, query);
+                search_calc_cnt++;
+                float left_min_dis = max(0.0f, dis - v_node->pivot_r);
+                float right_min_dis = max(0.0f, v_node->pivot_r - dis);
+                if (ans_heap.size() < k || left_min_dis < ans_heap.top().first) {
+                    Node *&left = v_node->left_child;
+                    node_heap.emplace(left_min_dis, left, v_node, dis);
+                }
+                if (ans_heap.size() < k || right_min_dis < ans_heap.top().first) {
+                    Node *&right = v_node->right_child;
+                    node_heap.emplace(right_min_dis, right, v_node, dis);
+                }
+
+            } else if (node->type == NodeType::GNode) {
+//                cout << "G node" << endl;
+                GNode *g_node = (GNode *) node;
+                node_heap.pop();
+                size_t n = g_node->pivot_cnt;
+                float dis[n];
+                search_start
+                for (size_t i = 0; i < n; i++) {
+                    dis[i] = calc_dis(db->dimension, g_node->pivots[i], query);
+                }
+                search_calc_cnt += n;
+                search_end
+                float min_dis, final_min_dis;
+                for (size_t i = 0; i < n; i++) {
+                    bool flag = true;
+                    final_min_dis = 0;
+                    for (size_t j = 0; flag && j < n; j++) {
+                        min_dis = max(0.0f, max(dis[j] - g_node->max_dis[j][i], g_node->min_dis[j][i] - dis[j]));
+                        final_min_dis = max(min_dis, final_min_dis);
+                        flag &= (ans_heap.size() < k || min_dis < ans_heap.top().first);
+                    }
+                    if (flag) {
+                        auto &child = g_node->children[i];
+                        node_heap.emplace(final_min_dis, child, node, dis[i]);
+                    }
+                }
+            } else {
+                cout << "node type not found" << endl;
+                exit(255);
+            }
+        }
+    }
+}
+
 void MixTree::knnSearchCache(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap) {
     cnt ++; // todo delete
     while(!node_heap.empty() && (ans_heap.size() < k || get<0>(node_heap.top()) < ans_heap.top().first)) {
@@ -163,12 +270,12 @@ void MixTree::knnSearchCache(float* query, int k, NodeHeap &node_heap, AnsHeap &
         if (node->is_leaf) {
             if (node->end - node->start + 1 <= db->crack_threshold) {
                 for (int i = node->start; i <= node->end; i ++ ) {
-//                    if (cnt == 999 && !ans_heap.empty())
-//                        cout << fabs(node->cache_dis[i - node->start] - pq_dis) << " "  <<  ans_heap.top().first << " " << ans_heap.size() << endl;
                     if (ans_heap.size() >= k && fabs(node->cache_dis[i - node->start] - pq_dis) > ans_heap.top().first) {  // todo 4 case(L2)
                         continue;
                     }
                     distance[i] = calc_dis(db->dimension, query, db->data[i]);
+                    if (cnt == 998 && !ans_heap.empty())
+                        cout << fabs(node->cache_dis[i - node->start] - pq_dis) << " " << distance[i] << " " <<  ans_heap.top().first << " " << ans_heap.size() << endl;
                     search_calc_cnt ++;
                     addAns(k, distance[i], db->data[i], ans_heap);
                 }
@@ -198,25 +305,6 @@ void MixTree::knnSearchCache(float* query, int k, NodeHeap &node_heap, AnsHeap &
                 search_calc_cnt ++;
                 float left_min_dis = max(0.0f, dis - v_node->pivot_r);
                 float right_min_dis = max(0.0f, v_node->pivot_r - dis);
-//                float topk_dis = (ans_heap.size() < k) ? 0 : ans_heap.top().first;
-//                if (cnt == 1000) {
-//                    cout << "vvv" << endl;
-//                    cout << left_min_dis << " " << right_min_dis << endl;
-//                    topk_dis = 5.87963;
-//                    if (ans_heap.size() < k) {
-//                        for (int i = 0; i < k; i ++ ) {
-//                            ans_heap.emplace(topk_dis, db->data[0]);
-//                        }
-//                    }
-//                }
-//                if (ans_heap.size() < k || left_min_dis < topk_dis) {
-//                    Node*& left = v_node->left_child;
-//                    node_heap.emplace(left_min_dis, left, v_node, dis);
-//                }
-//                if (ans_heap.size() < k || right_min_dis < topk_dis) {
-//                    Node*& right = v_node->right_child;
-//                    node_heap.emplace(right_min_dis, right, v_node, dis);
-//                }
                 if (ans_heap.size() < k || left_min_dis < ans_heap.top().first) {
                     Node*& left = v_node->left_child;
                     node_heap.emplace(left_min_dis, left, v_node, dis);
@@ -245,7 +333,6 @@ void MixTree::knnSearchCache(float* query, int k, NodeHeap &node_heap, AnsHeap &
                     final_min_dis = 0;
                     for (size_t j = 0; flag && j < n; j ++ ) {
                         min_dis = max(0.0f, max(dis[j] - g_node->max_dis[j][i], g_node->min_dis[j][i] - dis[j]));
-//                        float topk_dis = (ans_heap.size() < k) ? 0 : ans_heap.top().first;
                         final_min_dis = max(min_dis, final_min_dis);
                         flag &= (ans_heap.size() < k || min_dis < ans_heap.top().first);
                     }
@@ -261,6 +348,4 @@ void MixTree::knnSearchCache(float* query, int k, NodeHeap &node_heap, AnsHeap &
             }
         }
     }
-
-
 }

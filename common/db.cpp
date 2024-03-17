@@ -4,27 +4,6 @@
 #include <cmath>
 #include "getopt.h"
 
-
-float DB::l1_distance(const float *x, const float *y) const {
-    float ans = 0, res;
-    for (int i = 0; i < dimension; i++) {
-        res = (x[i] - y[i]);
-        if (res < 0) res = -res;
-        ans += res;
-    }
-    return ans;
-}
-
-float DB::l2_distance(const float *x, const float *y) const {
-    float ans = 0, res;
-    int i;
-    for (i = 0; i < dimension; i++) {
-        res = (x[i] - y[i]);
-        ans += res * res;
-    }
-    return std::sqrt(ans);
-}
-
 namespace common {
 
     void usage()
@@ -50,7 +29,8 @@ namespace common {
                     db->tree_threshold = atoi(optarg);
                     break;
                 case 's':
-                    db->method = Method::STANDARD;
+                    db->method = Method::SAX;
+                    break;
                 case 'c':
                     db->method = Method::CACHE;
                     break;
@@ -73,19 +53,22 @@ namespace common {
             std::cerr << "Can not open " << db->data_filename << std::endl;
             return;
         }
-        int dim, num, func;
-        file >> dim >> num >> func;
-        db->dimension = dim;
-        db->num_data = num;
+        int func;
+        file >> db->dimension >> db->num_data >> func >> db->segment;
+        if (db->dimension % db->segment != 0) {
+            std::cerr << "Segment not correct." << std::endl;
+            return;
+        }
+        db->num_per_segment = db->dimension / db->segment;
         if (func != func_type) {
             std::cerr << "Distance function type not match." << std::endl;
             return;
         }
 
-        db->data = new float * [num];
-        for (int i = 0; i < num; i ++ ) {
-            db->data[i] = new float [dim];
-            for (int j = 0; j < dim; j ++ ) {
+        db->data = new float * [db->num_data];
+        for (int i = 0; i < db->num_data; i ++ ) {
+            db->data[i] = new float [db->dimension];
+            for (int j = 0; j < db->dimension; j ++ ) {
                 if (!(file >> db->data[i][j])) {
                     std::cerr << "Data not enough." << std::endl;
                     break;

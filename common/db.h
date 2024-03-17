@@ -17,10 +17,6 @@ public:
         delete[] radius;
     }
 
-    float l1_distance(const float *x, const float *y) const;
-
-    float l2_distance(const float *x, const float *y) const;
-
     const char *data_filename;
     const char *query_filename;
 
@@ -32,6 +28,8 @@ public:
     int num_queries;
     int dimension;
 
+    int segment;
+    int num_per_segment;
 
 #ifdef L1
     float **data;

@@ -127,20 +127,17 @@ void MixTree::knnCrackG(Node *node, Node* pre_node, float *query, int k, AnsHeap
         g_node = (GNode*)node;
     }
     else {
-        cout << "delete" << endl;
         g_node = new GNode(node->start, node->end, max_pivot_cnt);
         if (node != root) {
             VNode* v_node = (VNode*) pre_node;
             if (node == v_node->left_child) {
-                cout << "is left" << endl;
                 v_node->left_child = g_node;
             }
             else if (node == v_node->right_child) {
-                cout << "is right" << endl;
                 v_node->right_child = g_node;
             }
             else {
-                cout << "error" << endl;
+                cout << "crack g error" << endl;
                 exit(255);
             }
             delete node;
