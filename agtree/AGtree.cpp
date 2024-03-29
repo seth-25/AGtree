@@ -194,7 +194,7 @@ void AGtree::crackInMany(Node *node, float *query, float query_r, vector<float>&
         for (int j = 0; j < pivot_cnt; j ++ ) {
             data_dis[j] = calc_dis(db->dimension, db->data[node->start + i], node->pivots[j]);
             if (j == 0) {   // pivot is query
-                if (data_dis[j] < query_r) {
+                if (data_dis[j] <= query_r) {
                     ans_dis.emplace_back(data_dis[j]);
                 }
                 search_calc_cnt ++;
@@ -249,7 +249,7 @@ void AGtree::crackInManyCache(Node *node, float *query, float query_r, vector<fl
         for (int j = 0; j < pivot_cnt; j ++ ) {
             data_dis[j] = calc_dis(db->dimension, db->data[node->start + i], node->pivots[j]);
             if (j == 0) {   // pivot is query
-                if (data_dis[j] < query_r) {
+                if (data_dis[j] <= query_r) {
                     ans_dis.emplace_back(data_dis[j]);
                 }
                 search_calc_cnt ++;

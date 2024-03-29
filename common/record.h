@@ -24,7 +24,7 @@ extern ClockType::time_point search_begin;
 extern long search_time, total_search_time;
 #define search_start search_begin = ClockType::now();
 #define search_end search_time = std::chrono::duration_cast<MicroSeconds>(ClockType::now() - search_begin).count(), total_search_time += search_time;
-#define print_search_time cout << "knnSearch time " << (double)total_search_time / MicroSeconds::period::den << endl;
+#define print_search_time cout << "total search time " << (double)total_search_time / MicroSeconds::period::den << endl;
 
 
 extern unsigned long search_calc_cnt;

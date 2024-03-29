@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
     total_start
     for (int i = 0; i < db->num_queries; i ++ ) {
         per_query_start
-        mixtree->knnSearch(db->queries[i % db->num_queries], 100, ans_dis);
+        mixtree->knnSearch(db->queries[i % db->num_queries], 10, ans_dis);
         per_query_end
         cout << i + 1 << "\t" << ans_dis.size() << "\t";
 

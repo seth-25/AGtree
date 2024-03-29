@@ -9,6 +9,7 @@ using namespace std;
 void MixTree::selectPivot(GNode *node, float* query) {
     //calc calc_dis between samples
     int sample_cnt = min(node->pivot_cnt * 3, node->end - node->start + 2); // data + query
+    std::vector<std::vector<float>> pivot_dis(sample_cnt, vector<float>(sample_cnt));
     for (int i = 0; i < sample_cnt - 1; i ++ ) {
         for (int j = 0; j < sample_cnt - 1; j ++ ) {
 //            if (i != j)
@@ -22,8 +23,10 @@ void MixTree::selectPivot(GNode *node, float* query) {
         pivot_dis[i][sample_cnt - 1] = pivot_dis[sample_cnt - 1][i] = calc_dis(db->dimension, db->data[node->start + i], query);
     }
     crack_calc_cnt += sample_cnt * sample_cnt;
+
     //select query as first pivot
     vector<bool> is_pivot(sample_cnt, false);
+    std::vector<int> pivot_pos(node->pivot_cnt);
     int p = sample_cnt - 1;
     pivot_pos[0] = p;
     is_pivot[p] = true;
@@ -49,7 +52,7 @@ void MixTree::selectPivot(GNode *node, float* query) {
     }
 }
 
-void MixTree::crackGCache(Node *&node, float *query, float query_r, vector<float>& ans_dis) {
+void MixTree::crackG(Node *&node, float *query, float query_r, vector<float>& ans_dis) {
     vector<float>().swap(node->cache_dis);
 //    node->cache_dis.clear();
 //    node->cache_dis.shrink_to_fit();
@@ -77,7 +80,7 @@ void MixTree::crackGCache(Node *&node, float *query, float query_r, vector<float
         for (int j = 0; j < pivot_cnt; j ++ ) {
             tmp_dis[j] = calc_dis(db->dimension, db->data[g_node->start + i], g_node->pivots[j]);   // 数据到第j个支枢点的距离
             if (j == 0) {   // pivot is query
-                if (tmp_dis[j] < query_r) {
+                if (tmp_dis[j] <= query_r) {
                     ans_dis.emplace_back(tmp_dis[j]);
                 }
                 search_calc_cnt ++;
@@ -113,6 +116,76 @@ void MixTree::crackGCache(Node *&node, float *query, float query_r, vector<float
     }
     for (int i = g_node->start; i <= g_node->end; i ++ ) {
         db->data[i] = data_tmp[i - g_node->start];
+    }
+}
+
+void MixTree::crackGSax(Node *&node, float *query, float query_r, vector<float>& ans_dis) {
+    vector<float>().swap(node->cache_dis);
+//    node->cache_dis.clear();
+//    node->cache_dis.shrink_to_fit();
+
+    GNode* g_node;
+    if (node->type == NodeType::GNode) {
+        node->is_leaf = false;
+        g_node = (GNode*)node;
+    }
+    else {
+        g_node = new GNode(node->start, node->end, max_pivot_cnt);
+        delete node;
+        node = g_node;
+    }
+    int pivot_cnt = g_node->pivot_cnt;
+    g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
+    g_node->max_dis.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
+    selectPivot(g_node, query);
+
+    vector<float> tmp_dis(pivot_cnt);
+    vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id
+    vector<vector<float>> pivot_data_dist(pivot_cnt);    // 数据到分配的支枢点的距离
+    int data_cnt = g_node->end - g_node->start + 1;
+    for (int i = 0; i < data_cnt; i ++ ) {
+        for (int j = 0; j < pivot_cnt; j ++ ) {
+            tmp_dis[j] = calc_dis(db->dimension, db->data[g_node->start + i], g_node->pivots[j]);   // 数据到第j个支枢点的距离
+            if (j == 0) {   // pivot is query
+                if (tmp_dis[j] <= query_r) {
+                    ans_dis.emplace_back(tmp_dis[j]);
+                }
+                search_calc_cnt ++;
+            }
+            else {
+                crack_calc_cnt ++;
+            }
+        }
+        int closest_pivot = (int)(min_element(tmp_dis.begin(), tmp_dis.end()) - tmp_dis.begin());
+        pivot_data[closest_pivot].emplace_back(g_node->start + i);
+        pivot_data_dist[closest_pivot].emplace_back(tmp_dis[closest_pivot]);
+        for (int j = 0; j < pivot_cnt; j ++ ) {
+            g_node->max_dis[j][closest_pivot] = max(g_node->max_dis[j][closest_pivot], tmp_dis[j]);    // 各个pivot到closest_pivot中最远的obj的距离
+            g_node->min_dis[j][closest_pivot] = min(g_node->min_dis[j][closest_pivot], tmp_dis[j]);    // 各个pivot到closest_pivot中最近的obj的距离
+        }
+    }
+
+    float *data_tmp[data_cnt];
+    sax_type *sax_tmp[data_cnt];
+    int tmp_len = 0;
+    for (int i = 0; i < pivot_cnt; i++) {
+        int new_node_start = tmp_len + node->start;
+        for (int data_id: pivot_data[i]) {
+            data_tmp[tmp_len] = db->data[data_id];
+            sax_tmp[tmp_len] = saxes[data_id];
+            tmp_len++;
+        }
+        // create new node
+        int new_node_end = tmp_len + node->start - 1;
+        int next_pivot_cnt = (int)pivot_data[i].size() * avg_pivot_cnt * pivot_cnt / data_cnt;
+        next_pivot_cnt = max(min_pivot_cnt, next_pivot_cnt);
+        next_pivot_cnt = min(max_pivot_cnt, next_pivot_cnt);
+        GNode* leaf_node = new GNode(new_node_start, new_node_end, next_pivot_cnt, pivot_data_dist[i]);
+        g_node->children.emplace_back(leaf_node);
+    }
+    for (int i = g_node->start; i <= g_node->end; i ++ ) {
+        db->data[i] = data_tmp[i - g_node->start];
+        saxes[i] = sax_tmp[i - g_node->start];
     }
 }
 
