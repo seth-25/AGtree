@@ -28,7 +28,7 @@ void AGtree::crackInTwo(Node *node, float *query, float query_r, float *&dis, ve
     for (int i = node->start; i <= node->end; i ++ ) {
         if (dis[i] > max_dis) {
             max_dis = dis[i];
-            pivot2_id = i;    // choose max distance data as pivot2
+            pivot2_id = i;    // choose max query_dist data as pivot2
         }
     }
     float *pivot2 = db->data[pivot2_id];

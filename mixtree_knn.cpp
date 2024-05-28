@@ -1,7 +1,10 @@
 #include <algorithm>
 #include "db.h"
-#include "MixTree.h"
+#include "mix_tree.h"
 #include "record.h"
+#include "mix_tree_cache.h"
+#include "mix_tree_kmeans.h"
+
 using namespace std;
 
 int main(int argc, char **argv) {
@@ -19,7 +22,17 @@ int main(int argc, char **argv) {
 
     AnsHeap ans_dis;
     int total_ans = 0;
-    MixTree* mixtree = new MixTree(db);
+    MixTree* mixtree;
+    switch (db->method) {
+        case Method::CACHE:
+            mixtree = new MixTreeCache(db);
+            break;
+        case Method::KMEANS:
+            mixtree = new MixTreeKmeans(db);
+            break;
+        default:
+            cout << "method not found" << endl;
+    }
 
 //    float dis = calc_dis(db->dimension, db->queries[0], db->queries[1]);
 //    cout << "dis:" << dis;
@@ -32,7 +45,7 @@ int main(int argc, char **argv) {
         per_query_end
         cout << i + 1 << "\t" << ans_dis.size() << "\t";
 
-        cout << "knnSearch: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
+        cout << "knnSearchImp: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
         total_search_calc_cnt += search_calc_cnt; total_crack_calc_cnt += crack_calc_cnt;
         search_calc_cnt = 0, crack_calc_cnt = 0;
         total_ans += ans_dis.size();
@@ -50,5 +63,5 @@ int main(int argc, char **argv) {
     print_crack_time
     print_total_time
     cout << "Total ans " << total_ans << endl;
-    cout << "knnSearch: " << total_search_calc_cnt << ", crack: " << total_crack_calc_cnt << ", total: " << total_search_calc_cnt + total_crack_calc_cnt << endl;
+    cout << "knnSearchImp: " << total_search_calc_cnt << ", crack: " << total_crack_calc_cnt << ", total: " << total_search_calc_cnt + total_crack_calc_cnt << endl;
 }

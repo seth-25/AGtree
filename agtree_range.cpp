@@ -17,7 +17,7 @@ using namespace std;
 //    cout << "Number data : " << db->num_data << endl;
 //    cout << "Number queries : " << db->num_queries << endl;
 //
-//    float *distance = (float *)calloc(db->num_data, sizeof(float));
+//    float *query_dist = (float *)calloc(db->num_data, sizeof(float));
 //    vector<float> ans_dis;
 //    int total_ans = 0;
 //    AGtree* agtree = new AGtree(db);
@@ -26,7 +26,7 @@ using namespace std;
 //    total_start
 //    for (int i = 0; i < db->num_queries; i ++ ) {
 //        per_query_start
-//        agtree->rangeSearchCache(agtree->root, db->queries[i], db->radius[i], i, distance, ans_dis);
+//        agtree->rangeSearchCache(agtree->root, db->queries[i], db->radius[i], i, query_dist, ans_dis);
 //        per_query_end
 //        cout << i + 1 << "\t" << ans_dis.size() << "\t";
 //        total_ans += ans_dis.size();
@@ -38,7 +38,7 @@ using namespace std;
 //    print_crack_time
 //    print_total_time
 //    cout << "Total ans " << total_ans << endl;
-//    cout << "knnSearch: "<< search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
+//    cout << "knnSearchImp: "<< search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
 //}
 
 int main(int argc, char **argv) {
@@ -63,15 +63,15 @@ int main(int argc, char **argv) {
     for (int i = 0; i < db->num_queries; i ++ ) {
 //    for (int i = 0; i < 1; i ++ ) {
         per_query_start
-//        agtree->knnSearch(agtree->root, db->queries[i], db->radius[i], distance, ans_dis);
-//        agtree->searchMany(agtree->root, db->queries[i], db->radius[i], distance, ans_dis);
+//        agtree->knnSearchImp(agtree->root, db->queries[i], db->radius[i], query_dist, ans_dis);
+//        agtree->searchMany(agtree->root, db->queries[i], db->radius[i], query_dist, ans_dis);
         agtree->searchCache(agtree->root, db->queries[i], db->radius[i], 0, distance, ans_dis);
         per_query_end
 //        for (int j = 0; j < ans_dis.size(); j ++ ) {
 //            cout << ans_dis[j] << " " ;
 //        }
         cout << i + 1 << "\t" << ans_dis.size() << "\t";
-        cout << "knnSearch: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
+        cout << "knnSearchImp: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
         total_search_calc_cnt += search_calc_cnt; total_crack_calc_cnt += crack_calc_cnt;
         search_calc_cnt = 0, crack_calc_cnt = 0;
         total_ans += ans_dis.size();
@@ -83,5 +83,5 @@ int main(int argc, char **argv) {
     print_crack_time
     print_total_time
     cout << "Total ans " << total_ans << endl;
-    cout << "knnSearch: " << total_search_calc_cnt << ", crack: " << total_crack_calc_cnt << ", total: " << total_search_calc_cnt + total_crack_calc_cnt << endl;
+    cout << "knnSearchImp: " << total_search_calc_cnt << ", crack: " << total_crack_calc_cnt << ", total: " << total_search_calc_cnt + total_crack_calc_cnt << endl;
 }

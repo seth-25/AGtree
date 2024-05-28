@@ -26,7 +26,7 @@ file.
     namespace details {
 
 /*
-Calculate the square of the distance between two points.
+Calculate the square of the query_dist between two points.
 */
         template <typename T, size_t N>
         T distance_squared(const std::array<T, N>& point_a, const std::array<T, N>& point_b) {
@@ -44,7 +44,7 @@ Calculate the square of the distance between two points.
         }
 
 /*
-Calculate the smallest distance between each of the data points and any of the input means.
+Calculate the smallest query_dist between each of the data points and any of the input means.
 */
         template <typename T, size_t N>
         std::vector<T> closest_distance(
@@ -84,9 +84,9 @@ initialization algorithm.
             }
 
             for (uint32_t count = 1; count < k; ++count) {
-                // Calculate the distance to the closest mean for each data point
+                // Calculate the query_dist to the closest mean for each data point
                 auto distances = details::closest_distance(means, data);
-                // Pick a random point weighted by the distance from existing means
+                // Pick a random point weighted by the query_dist from existing means
                 // TODO: This might convert floating point weights to ints, distorting the distribution for small weights
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
                 std::discrete_distribution<input_size_t> generator(distances.begin(), distances.end());
@@ -100,7 +100,7 @@ initialization algorithm.
         }
 
 /*
-Calculate the index of the mean a particular data point is closest to (euclidean distance)
+Calculate the index of the mean a particular data point is closest to (euclidean query_dist)
 */
         template <typename T, size_t N>
         uint32_t closest_mean(const std::array<T, N>& point, const std::vector<std::array<T, N>>& means) {
@@ -119,7 +119,7 @@ Calculate the index of the mean a particular data point is closest to (euclidean
         }
 
 /*
-Calculate the index of the mean each data point is closest to (euclidean distance).
+Calculate the index of the mean each data point is closest to (euclidean query_dist).
 */
         template <typename T, size_t N>
         std::vector<uint32_t> calculate_clusters(
@@ -194,7 +194,7 @@ of optional parameters, including:
   before converging on a solution. The results returned are the means and cluster assignments
   calculated in the last iteration before termination.
 * Minimum delta; the algorithm will terminate if the change in position of all means is
-  smaller than the specified distance.
+  smaller than the specified query_dist.
 * Random seed; if present, this will be used in place of `std::random_device` for kmeans++
   initialization. This can be used to ensure reproducible/deterministic behavior.
 */

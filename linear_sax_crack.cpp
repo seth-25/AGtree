@@ -53,11 +53,11 @@ int main(int argc, char **argv) {
 //        int rnd_dis[3];
 //        for (int j = 0; j < 3; j ++ ) {
 //            rnd_dis[j] = (rand() % db->num_data );
-//            distance[rnd_dis[j]] = calc_dis(db->dimension, query, db->data[rnd_dis[j]]);
+//            query_dist[rnd_dis[j]] = calc_dis(db->dimension, query, db->data[rnd_dis[j]]);
 //        }
-//        float med_dis = max(min(distance[rnd_dis[0]], distance[rnd_dis[1]]),
-//                            min(max(distance[rnd_dis[0]], distance[rnd_dis[1]]),
-//                                distance[rnd_dis[2]])
+//        float med_dis = max(min(query_dist[rnd_dis[0]], query_dist[rnd_dis[1]]),
+//                            min(max(query_dist[rnd_dis[0]], query_dist[rnd_dis[1]]),
+//                                query_dist[rnd_dis[2]])
 //        );
 //        cout << "med dis:" << med_dis << endl;
 //

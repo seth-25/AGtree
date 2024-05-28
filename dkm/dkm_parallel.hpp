@@ -29,7 +29,7 @@ file.
 namespace details {
 
 /*
-Calculate the smallest distance between each of the data points and any of the input means.
+Calculate the smallest query_dist between each of the data points and any of the input means.
 */
 template <typename T, size_t N>
 std::vector<T> closest_distance_parallel(
@@ -69,9 +69,9 @@ std::vector<std::array<T, N>> random_plusplus_parallel(const std::vector<std::ar
 	}
 
 	for (uint32_t count = 1; count < k; ++count) {
-		// Calculate the distance to the closest mean for each data point
+		// Calculate the query_dist to the closest mean for each data point
 		auto distances = details::closest_distance_parallel(means, data);
-		// Pick a random point weighted by the distance from existing means
+		// Pick a random point weighted by the query_dist from existing means
 		// TODO: This might convert floating point weights to ints, distorting the distribution for small weights
 #if !defined(_MSC_VER) || _MSC_VER >= 1900
 		std::discrete_distribution<input_size_t> generator(distances.begin(), distances.end());
@@ -85,7 +85,7 @@ std::vector<std::array<T, N>> random_plusplus_parallel(const std::vector<std::ar
 }
 
 /*
-Calculate the index of the mean each data point is closest to (euclidean distance).
+Calculate the index of the mean each data point is closest to (euclidean query_dist).
 */
 template <typename T, size_t N>
 std::vector<uint32_t> calculate_clusters_parallel(
