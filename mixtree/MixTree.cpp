@@ -470,8 +470,8 @@ void MixTree::knnSearch(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_h
                         continue;
                     }
                     distance[i] = calc_dis(db->dimension, query, db->data[i]);
-                    if (cnt == 998 && !ans_heap.empty())
-                        cout << fabs(node->cache_dis[i - node->start] - pq_dis) << " " << distance[i] << " " <<  ans_heap.top().first << " " << ans_heap.size() << endl;
+//                    if (cnt == 998 && !ans_heap.empty())
+//                        cout << fabs(node->cache_dis[i - node->start] - pq_dis) << " " << distance[i] << " " <<  ans_heap.top().first << " " << ans_heap.size() << endl;
                     search_calc_cnt ++;
                     addAns(k, distance[i], db->data[i], ans_heap);
                 }

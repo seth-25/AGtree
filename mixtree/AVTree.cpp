@@ -137,26 +137,27 @@ void MixTree::crackVKmeans(Node *&node, float *query, float query_r, std::vector
     const auto& means = std::get<0>(k_res);
     const auto& labels = std::get<1>(k_res);
     int target_label = means[0][0] < means[1][0] ? 0 : 1;
-//    cout << "target_label:" << target_label << endl;
-//    cout << "Means:";
-//    for (const auto& mean : means) {
-//        cout << "\t(" << mean[0] << ")";
-//    }
-//    cout << endl;
+    cout << "target_label:" << target_label << endl;
+    cout << "Means:";
+    for (const auto& mean : means) {
+        cout << "\t(" << mean[0] << ")";
+    }
+    cout << endl;
     float med_dis = 0;
-//    int cnt0 = 0, cnt1 = 0;
+    int cnt0 = 0, cnt1 = 0;
     for (int i = 0; i < labels.size(); i ++ ) {
         const auto& label = labels[i];
         if (label == target_label) {
             med_dis = max(med_dis, sample_rnd_dis[i][0]);
-//            cnt0 ++;
+            cnt0 ++;
         }
-//        else {
-//            cnt1 ++;
-//        }
+        else {
+            cnt1 ++;
+        }
     }
-//    cout << "clusters:" << cnt0 << " " << cnt1 << endl;
-//    cout << "med_dis:" << med_dis << endl;
+    cout << "clusters:" << cnt0 << " " << cnt1 << endl;
+    cout << "med_dis:" << med_dis << endl;
+
 
 
     int l = v_node->start, r = v_node->end;
@@ -184,6 +185,8 @@ void MixTree::crackVKmeans(Node *&node, float *query, float query_r, std::vector
     vector<float> cache_right(v_node->end - r);
     std::swap_ranges(distance.begin() + v_node->start, distance.begin() + r + 1, cache_left.begin());
     std::swap_ranges(distance.begin() + r + 1, distance.begin() + v_node->end + 1, cache_right.begin());
+
+    cout << "split num:" << cache_left.size() << " " << cache_right.size() << endl;
 
     v_node->pivot = query;
     v_node->pivot_r = med_dis;
