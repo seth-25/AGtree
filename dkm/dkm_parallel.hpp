@@ -126,12 +126,15 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd_pa
 	assert(parameters.get_k() > 0); // k must be greater than zero
 	assert(data.size() >= parameters.get_k()); // there must be at least k data points
 	std::random_device rand_device;
-	uint64_t seed = parameters.has_random_seed() ? parameters.get_random_seed() : rand_device();
-//    std::vector<std::array<T, N>> means;
-//    for(int i=0;i<parameters.get_k();i++) {
-//        means.push_back(data[i]);
-//    }
-	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), seed);
+
+    std::vector<std::array<T, N>> means;
+    for (int i = 0; i < parameters.get_k(); i++) {
+        means.push_back(data[i]);
+    }
+
+//	uint64_t seed = parameters.has_random_seed() ? parameters.get_random_seed() : rand_device();
+//	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), seed);
+
 	std::vector<std::array<T, N>> old_means;
 	std::vector<std::array<T, N>> old_old_means;
 	std::vector<uint32_t> clusters;

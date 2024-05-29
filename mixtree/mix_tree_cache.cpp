@@ -8,7 +8,7 @@
 using namespace std;
 
 MixTreeCache::MixTreeCache(DB *db_): MixTree(db_) {
-    query_dist.reserve(db->num_data);
+    query_dist.resize(db->num_data);
     vector<float> cache_dis(db->num_data, 0);
     root = new VNode(0, db->num_data - 1, cache_dis);
 }
@@ -18,7 +18,7 @@ MixTreeCache::~MixTreeCache() {
     delete root;
 }
 
-void MixTreeCache::crackV(Node *&node, float *query, float query_r, std::vector<float> &ans_dis) {
+void MixTreeCache::crackV(Node *node, float *query, float query_r, std::vector<float> &ans_dis) {
     vector<float>().swap(node->cache_dis);
 
     node->is_leaf = false;
@@ -72,7 +72,7 @@ void MixTreeCache::crackV(Node *&node, float *query, float query_r, std::vector<
     v_node->right_child = new VNode(r + 1, v_node->end, cache_right);
 }
 
-void MixTreeCache::crackG(Node *&node, float *query, float query_r, vector<float>& ans_dis) {
+void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_r, vector<float>& ans_dis) {
     vector<float>().swap(node->cache_dis);
 //    node->cache_dis.clear();
 //    node->cache_dis.shrink_to_fit();
@@ -84,9 +84,25 @@ void MixTreeCache::crackG(Node *&node, float *query, float query_r, vector<float
     }
     else {
         g_node = new GNode(node->start, node->end, max_pivot_cnt);
-        delete node;
-        node = g_node;
+        if (node != root) {
+            VNode* v_node = (VNode*) pre_node;
+            if (node == v_node->left_child) {
+                v_node->left_child = g_node;
+            }
+            else if (node == v_node->right_child) {
+                v_node->right_child = g_node;
+            }
+            else {
+                cout << "crack g error" << endl;
+                exit(255);
+            }
+            delete node;
+        }
+        else {
+            root = g_node;
+        }
     }
+
     int pivot_cnt = g_node->pivot_cnt;
     g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
     g_node->max_dis.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
@@ -121,13 +137,13 @@ void MixTreeCache::crackG(Node *&node, float *query, float query_r, vector<float
     float *data_tmp[data_cnt];
     int tmp_len = 0;
     for (int i = 0; i < pivot_cnt; i++) {
-        int new_node_start = tmp_len + node->start;
+        int new_node_start = tmp_len + g_node->start;
         for (int data_id: pivot_data[i]) {
             data_tmp[tmp_len] = db->data[data_id];
             tmp_len++;
         }
         // create new node
-        int new_node_end = tmp_len + node->start - 1;
+        int new_node_end = tmp_len + g_node->start - 1;
         int next_pivot_cnt = (int)pivot_data[i].size() * avg_pivot_cnt * pivot_cnt / data_cnt;
         next_pivot_cnt = max(min_pivot_cnt, next_pivot_cnt);
         next_pivot_cnt = min(max_pivot_cnt, next_pivot_cnt);
@@ -138,6 +154,99 @@ void MixTreeCache::crackG(Node *&node, float *query, float query_r, vector<float
         db->data[i] = data_tmp[i - g_node->start];
     }
 }
+
+
+
+void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, float query_r, float pq_dis, vector<float> &ans_dis) {
+    if (node->is_leaf) {  // leaf node
+        if (node->end - node->start + 1 <= db->crack_threshold) {
+            search_start
+            for (int i = node->start; i <= node->end; i ++ ) {
+                if (fabs(node->cache_dis[i - node->start] - pq_dis) > query_r) {  // todo 4 case(L2)
+                    continue;
+                }
+                query_dist[i] = calc_dis(db->dimension, db->data[i], query);
+                search_calc_cnt ++;
+                if (query_dist[i] <= query_r) {
+                    ans_dis.emplace_back(query_dist[i]);
+                }
+            }
+            search_end
+        }
+        else {
+            if (node->end - node->start + 1 <= db->tree_threshold) {
+                crack_start
+                cout << "G crack" << endl;
+                crackG(node, pre_node, query, query_r, ans_dis);
+                crack_end
+            }
+            else {
+                crack_start
+                cout << "V crack" << endl;
+                crackV(node, query, query_r, ans_dis);
+                crack_end
+            }
+        }
+    }
+    else {  // internal node
+        if (node->type == NodeType::VNode) {   // VNode
+            VNode* v_node = (VNode*) node;
+            float dis = calc_dis(db->dimension, v_node->pivot, query);
+            search_calc_cnt ++;
+            auto& left = v_node->left_child;
+            auto& right = v_node->right_child;
+            if (dis < query_r + v_node->pivot_r) {
+                if (dis < query_r - v_node->pivot_r) {  // all data in left child is ans
+                    for (int i = left->start; i <= left->end; i ++ ) {
+                        ans_dis.emplace_back(calc_dis(db->dimension, query, db->data[i]));
+                    }
+                    search_calc_cnt += left->end - left->start;
+                    rangeSearchImp(right, node, query, query_r, dis, ans_dis);
+                }
+                else {
+                    rangeSearchImp(left, node, query, query_r, dis, ans_dis);
+                    if (dis >= v_node->pivot_r - query_r) {
+                        rangeSearchImp(right, node, query, query_r, dis, ans_dis);
+                    }
+                }
+            }
+            else {
+                rangeSearchImp(right, node, query, query_r, dis, ans_dis);
+            }
+
+        }
+        else if (node->type == NodeType::GNode){  // GNode
+            GNode* g_node = (GNode*) node;
+            size_t n = g_node->pivot_cnt;
+            float dis[n];
+            search_start
+            for (size_t i = 0; i < n; i ++ ) {
+                dis[i] = calc_dis(db->dimension, g_node->pivots[i], query);
+            }
+            search_calc_cnt += n;
+            search_end
+            for (size_t i = 0; i < n; i ++ ) {
+                bool flag = true;
+                for (size_t j = 0; flag && j < n; j ++ ) {
+                    flag &= (g_node->max_dis[j][i] >= dis[j] - query_r);
+                    flag &= (g_node->min_dis[j][i] <= dis[j] + query_r);
+                }
+                if (flag) {
+                    auto& child = g_node->children[i];
+                    rangeSearchImp(child, node, query, query_r, dis[i], ans_dis);
+                }
+            }
+        }
+        else {
+            cout << "node type not found" << endl;
+            exit(255);
+        }
+    }
+}
+
+
+
+
 
 void MixTreeCache::knnCrackV(Node *node, float *query, int k, AnsHeap &ans_heap) {   // med cache
     vector<float>().swap(node->cache_dis);
@@ -268,94 +377,6 @@ void MixTreeCache::knnCrackG(Node *node, Node* pre_node, float *query, int k, An
     }
     for (int i = g_node->start; i <= g_node->end; i ++ ) {
         db->data[i] = data_tmp[i - g_node->start];
-    }
-}
-
-
-void MixTreeCache::rangeSearchImp(Node *&node, float* query, float query_r, float pq_dis, vector<float> &ans_dis) {
-    if (node->is_leaf) {  // leaf node
-        if (node->end - node->start + 1 <= db->crack_threshold) {
-            search_start
-            for (int i = node->start; i <= node->end; i ++ ) {
-                if (fabs(node->cache_dis[i - node->start] - pq_dis) > query_r) {  // todo 4 case(L2)
-                    continue;
-                }
-                query_dist[i] = calc_dis(db->dimension, db->data[i], query);
-                search_calc_cnt ++;
-                if (query_dist[i] <= query_r) {
-                    ans_dis.emplace_back(query_dist[i]);
-                }
-            }
-            search_end
-        }
-        else {
-            if (node->end - node->start + 1 <= db->tree_threshold) {
-                crack_start
-                cout << "G crack" << endl;
-                crackG(node, query, query_r, ans_dis);
-                crack_end
-            }
-            else {
-                crack_start
-                cout << "V crack" << endl;
-                crackV(node, query, query_r, ans_dis);
-                crack_end
-            }
-        }
-    }
-    else {  // internal node
-        if (node->type == NodeType::VNode) {   // VNode
-            VNode* v_node = (VNode*) node;
-            float dis = calc_dis(db->dimension, v_node->pivot, query);
-            search_calc_cnt ++;
-            auto& left = v_node->left_child;
-            auto& right = v_node->right_child;
-            if (dis < query_r + v_node->pivot_r) {
-                if (dis < query_r - v_node->pivot_r) {  // all data in left child is ans
-                    for (int i = left->start; i <= left->end; i ++ ) {
-                        ans_dis.emplace_back(calc_dis(db->dimension, query, db->data[i]));
-                    }
-                    search_calc_cnt += left->end - left->start;
-                    rangeSearchImp(right, query, query_r, dis, ans_dis);
-                }
-                else {
-                    rangeSearchImp(left, query, query_r, dis, ans_dis);
-                    if (dis >= v_node->pivot_r - query_r) {
-                        rangeSearchImp(right, query, query_r, dis, ans_dis);
-                    }
-                }
-            }
-            else {
-                rangeSearchImp(right, query, query_r, dis, ans_dis);
-            }
-
-        }
-        else if (node->type == NodeType::GNode){  // GNode
-            GNode* g_node = (GNode*) node;
-            size_t n = g_node->pivot_cnt;
-            float dis[n];
-            search_start
-            for (size_t i = 0; i < n; i ++ ) {
-                dis[i] = calc_dis(db->dimension, g_node->pivots[i], query);
-            }
-            search_calc_cnt += n;
-            search_end
-            for (size_t i = 0; i < n; i ++ ) {
-                bool flag = true;
-                for (size_t j = 0; flag && j < n; j ++ ) {
-                    flag &= (g_node->max_dis[j][i] >= dis[j] - query_r);
-                    flag &= (g_node->min_dis[j][i] <= dis[j] + query_r);
-                }
-                if (flag) {
-                    auto& child = g_node->children[i];
-                    rangeSearchImp(child, query, query_r, dis[i], ans_dis);
-                }
-            }
-        }
-        else {
-            cout << "node type not found" << endl;
-            exit(255);
-        }
     }
 }
 

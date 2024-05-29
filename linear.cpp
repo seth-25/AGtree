@@ -30,8 +30,9 @@ int main(int argc, char **argv) {
         sort(ans_dis.begin(), ans_dis.end());
         for (int j = 0; j < ans_dis.size(); j ++ ) {
             cout << ans_dis[j] << " " ;
+//            cout << j << " " << ans_dis[j] << endl;
         }
-        cout << endl;
+        cout << endl << endl;
         ans_dis.clear();
     }
     cout << total_ans << endl;

@@ -45,7 +45,7 @@ int main(int argc, char **argv) {
         per_query_end
         cout << i + 1 << "\t" << ans_dis.size() << "\t";
 
-        cout << "knnSearchImp: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
+        cout << "knnSearch: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
         total_search_calc_cnt += search_calc_cnt; total_crack_calc_cnt += crack_calc_cnt;
         search_calc_cnt = 0, crack_calc_cnt = 0;
         total_ans += ans_dis.size();
@@ -63,5 +63,5 @@ int main(int argc, char **argv) {
     print_crack_time
     print_total_time
     cout << "Total ans " << total_ans << endl;
-    cout << "knnSearchImp: " << total_search_calc_cnt << ", crack: " << total_crack_calc_cnt << ", total: " << total_search_calc_cnt + total_crack_calc_cnt << endl;
+    cout << "knnSearch: " << total_search_calc_cnt << ", crack: " << total_crack_calc_cnt << ", total: " << total_search_calc_cnt + total_crack_calc_cnt << endl;
 }

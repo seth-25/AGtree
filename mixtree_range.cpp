@@ -41,13 +41,13 @@ int main(int argc, char **argv) {
     total_start
     for (int i = 0; i < db->num_queries; i ++ ) {
         per_query_start
-        mixtree->rangeSearch(db->queries[i % db->num_queries], db->radius[i % db->num_queries], ans_dis);
+        mixtree->rangeSearch(db->queries[i], db->radius[i], ans_dis);
         per_query_end
 //        for (int j = 0; j < ans_dis.size(); j ++ ) {
 //            cout << ans_dis[j] << " " ;
 //        }
         cout << i + 1 << "\t num_ans:" << ans_dis.size() << "\t";
-        cout << "rangeSearchImp: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
+        cout << "rangeSearch: " << search_calc_cnt << ", crack: " << crack_calc_cnt << ", total: " << search_calc_cnt + crack_calc_cnt << endl;
         total_search_calc_cnt += search_calc_cnt; total_crack_calc_cnt += crack_calc_cnt;
         search_calc_cnt = 0, crack_calc_cnt = 0;
         total_ans += ans_dis.size();
@@ -60,5 +60,5 @@ int main(int argc, char **argv) {
     print_crack_time
     print_total_time
     cout << "Total ans " << total_ans << endl;
-    cout << "rangeSearchImp: " << total_search_calc_cnt << ", crack: " << total_crack_calc_cnt << ", total: " << total_search_calc_cnt + total_crack_calc_cnt << endl;
+    cout << "rangeSearch: " << total_search_calc_cnt << ", crack: " << total_crack_calc_cnt << ", total: " << total_search_calc_cnt + total_crack_calc_cnt << endl;
 }

@@ -1,4 +1,5 @@
 #include <queue>
+#include <cfloat>
 #include "mix_tree_kmeans.h"
 #include "record.h"
 #include "../dkm/dkm_parallel.hpp"
@@ -9,12 +10,12 @@ MixTreeKmeans::MixTreeKmeans(DB *db_): MixTreeCache(db_) {
     sample_num = 100;
     max_iter = 30;
 
-    query_dist.reserve(db->num_data);
+    query_dist.resize(db->num_data);
     vector<float> cache_dis(db->num_data, 0);
     root = new VNode(0, db->num_data - 1, cache_dis);
 }
 
-void MixTreeKmeans::crackV(Node *&node, float *query, float query_r, std::vector<float> &ans_dis) {
+void MixTreeKmeans::crackV(Node *node, float *query, float query_r, std::vector<float> &ans_dis) {
     vector<float>().swap(node->cache_dis);
 
     node->is_leaf = false;
@@ -35,38 +36,41 @@ void MixTreeKmeans::crackV(Node *&node, float *query, float query_r, std::vector
     const auto& means = std::get<0>(k_res);
     const auto& labels = std::get<1>(k_res);
     int target_label = means[0][0] < means[1][0] ? 0 : 1;
-    cout << "target_label:" << target_label << endl;
-    cout << "Means:";
-    for (const auto& mean : means) {
-        cout << "\t(" << mean[0] << ")";
+
+    {   // todo delete
+        cout << "target_label:" << target_label << endl;
+        cout << "Means:";
+        for (const auto& mean : means) {
+            cout << "\t(" << mean[0] << ")";
+        }
+        cout << endl;
     }
-    cout << endl;
-    float med_dis = 0;
-    int cnt0 = 0, cnt1 = 0;
+
+
+    float split_dis = 0;
+    int cnt0 = 0, cnt1 = 0; // todo delete
     for (int i = 0; i < labels.size(); i ++ ) {
         const auto& label = labels[i];
         if (label == target_label) {
-            med_dis = max(med_dis, sample_rnd_dis[i][0]);
+            split_dis = max(split_dis, sample_rnd_dis[i][0]);
             cnt0 ++;
         }
         else {
             cnt1 ++;
         }
     }
-    cout << "clusters:" << cnt0 << " " << cnt1 << endl;
-    cout << "med_dis:" << med_dis << endl;
-
-
+    cout << "clusters:" << cnt0 << " " << cnt1 << endl; // todo delete
+    cout << "split_dis:" << split_dis << endl; // todo delete
 
     int l = v_node->start, r = v_node->end;
     while(true) {
-        while(query_dist[l] <= med_dis && l <= v_node->end) {
+        while(query_dist[l] <= split_dis && l <= v_node->end) {
             if (query_dist[l] <= query_r) {
                 ans_dis.emplace_back(query_dist[l]);
             }
             l++;
         }
-        while(query_dist[r] > med_dis && r >= v_node->start) {
+        while(query_dist[r] > split_dis && r >= v_node->start) {
             if (query_dist[r] <= query_r) {
                 ans_dis.emplace_back(query_dist[r]);
             }
@@ -79,20 +83,29 @@ void MixTreeKmeans::crackV(Node *&node, float *query, float query_r, std::vector
         swap(query_dist[l], query_dist[r]);
     }
 
+//        vector<float> query_dist_copy;
+//        query_dist_copy = query_dist;
+//        sort(query_dist_copy.begin() + v_node->start, query_dist_copy.begin() + v_node->end + 1);
+//        for (int i = v_node->start; i <= v_node->end; i ++ ) {
+//            if (i % 10 == 0)
+//            cout << i  << ":" << query_dist_copy[i] <<  ";;; ";
+//        }
+
     vector<float> cache_left(r - v_node->start + 1);
     vector<float> cache_right(v_node->end - r);
     std::swap_ranges(query_dist.begin() + v_node->start, query_dist.begin() + r + 1, cache_left.begin());
     std::swap_ranges(query_dist.begin() + r + 1, query_dist.begin() + v_node->end + 1, cache_right.begin());
 
-    cout << "split num:" << cache_left.size() << " " << cache_right.size() << endl;
+    cout << "split num:" << cache_left.size() << " " << cache_right.size() << endl; // todo delete
+
 
     v_node->pivot = query;
-    v_node->pivot_r = med_dis;
+    v_node->pivot_r = split_dis;
     v_node->left_child = new VNode(v_node->start, r, cache_left);
     v_node->right_child = new VNode(r + 1, v_node->end, cache_right);
 }
 
-void MixTreeKmeans::rangeSearchImp(Node *&node, float* query, float query_r, float pq_dis, vector<float> &ans_dis) {
+void MixTreeKmeans::rangeSearchImp(Node *node, Node* pre_node, float* query, float query_r, float pq_dis, vector<float> &ans_dis) {
     if (node->is_leaf) {  // leaf node
         if (node->end - node->start + 1 <= db->crack_threshold) {
             search_start
@@ -112,7 +125,7 @@ void MixTreeKmeans::rangeSearchImp(Node *&node, float* query, float query_r, flo
             if (node->end - node->start + 1 <= db->tree_threshold) {
                 crack_start
                 cout << "G crack" << endl;
-                crackG(node, query, query_r, ans_dis);
+                crackG(node, pre_node, query, query_r, ans_dis);
                 crack_end
             }
             else {
@@ -136,17 +149,17 @@ void MixTreeKmeans::rangeSearchImp(Node *&node, float* query, float query_r, flo
                         ans_dis.emplace_back(calc_dis(db->dimension, query, db->data[i]));
                     }
                     search_calc_cnt += left->end - left->start;
-                    rangeSearchImp(right, query, query_r, dis, ans_dis);
+                    rangeSearchImp(right, node, query, query_r, dis, ans_dis);
                 }
                 else {
-                    rangeSearchImp(left, query, query_r, dis, ans_dis);
+                    rangeSearchImp(left, node, query, query_r, dis, ans_dis);
                     if (dis >= v_node->pivot_r - query_r) {
-                        rangeSearchImp(right, query, query_r, dis, ans_dis);
+                        rangeSearchImp(right, node, query, query_r, dis, ans_dis);
                     }
                 }
             }
             else {
-                rangeSearchImp(right, query, query_r, dis, ans_dis);
+                rangeSearchImp(right, node, query, query_r, dis, ans_dis);
             }
 
         }
@@ -168,7 +181,7 @@ void MixTreeKmeans::rangeSearchImp(Node *&node, float* query, float query_r, flo
                 }
                 if (flag) {
                     auto& child = g_node->children[i];
-                    rangeSearchImp(child, query, query_r, dis[i], ans_dis);
+                    rangeSearchImp(child, node, query, query_r, dis[i], ans_dis);
                 }
             }
         }
@@ -209,7 +222,6 @@ void MixTreeKmeans::knnCrackV(Node *node, float *query, int k, AnsHeap &ans_heap
             med_dis = max(med_dis, sample_rnd_dis[i][0]);
         }
     }
-
 
     int l = v_node->start, r = v_node->end;
     while(true) {

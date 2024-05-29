@@ -14,7 +14,7 @@ MixTree::MixTree(DB *db_): db(db_) {
 }
 
 void MixTree::rangeSearch(float *query, float query_r, std::vector<float> &ans_dis) {
-    rangeSearchImp(root, query, query_r, 0, ans_dis);
+    rangeSearchImp(root, nullptr, query, query_r, 0, ans_dis);
 }
 
 void MixTree::knnSearch(float *query, int k, AnsHeap &ans_dis) {
