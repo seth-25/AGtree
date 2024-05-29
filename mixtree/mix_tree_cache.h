@@ -20,5 +20,7 @@ public:
     void knnCrackG(Node *node, Node* pre_node, float *query, int k, AnsHeap &ans_dis) override;
 
     void knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap) override;
+
+    void selectPivot(GNode *node, float *query) override;
 };
 

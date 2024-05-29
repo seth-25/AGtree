@@ -13,6 +13,7 @@ public:
 
     void knnSearchImp(float *query, int k, NodeHeap &node_heap, AnsHeap &ans_heap) override;
 
+//    void selectPivot(GNode *node, float *query) override;
 
     int sample_num, max_iter;   // kmeans parm
 };

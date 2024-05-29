@@ -28,7 +28,7 @@ public:
     virtual void knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap) = 0;
 
 
-    void selectPivot(GNode *node, float *query);
+    virtual void selectPivot(GNode *node, float *query) = 0;
 
     void addAns(int k, float dis, float *data, AnsHeap &ans_heap);
 

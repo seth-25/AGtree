@@ -127,11 +127,11 @@ std::tuple<std::vector<std::array<T, N>>, std::vector<uint32_t>> kmeans_lloyd_pa
 	assert(data.size() >= parameters.get_k()); // there must be at least k data points
 	std::random_device rand_device;
 
+    // TODO
     std::vector<std::array<T, N>> means;
     for (int i = 0; i < parameters.get_k(); i++) {
         means.push_back(data[i]);
     }
-
 //	uint64_t seed = parameters.has_random_seed() ? parameters.get_random_seed() : rand_device();
 //	std::vector<std::array<T, N>> means = details::random_plusplus_parallel(data, parameters.get_k(), seed);
 

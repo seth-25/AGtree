@@ -105,6 +105,29 @@ void MixTreeKmeans::crackV(Node *node, float *query, float query_r, std::vector<
     v_node->right_child = new VNode(r + 1, v_node->end, cache_right);
 }
 
+//void MixTreeKmeans::selectPivot(GNode *node, float* query) {
+//    int rnd_num = min(10 * node->pivot_cnt, node->end - node->start + 1); // todo hard code
+//    vector<array<float, 50>> sample_rnd(rnd_num); // todo hard code
+//    for (int i = 0; i < rnd_num; i ++ ) {
+//        for (int j = 0; j < 50; j ++ ) { // todo hard code
+//            sample_rnd[i][j] = db->data[node->start + i][j];
+//        }
+//    }
+//    auto k_res = dkm::kmeans_lloyd_parallel(sample_rnd, node->pivot_cnt, max_iter); // k = pivot_cnt
+//    const auto& means = std::get<0>(k_res);
+//    const auto& labels = std::get<1>(k_res);
+//
+//    for (const auto & mean : means) {
+//        auto* pivot = new float[db->dimension];
+//        std::copy(mean.begin(), mean.end(), pivot);
+//        node->pivots.emplace_back(pivot);
+//    }
+//    for (const auto& pivot : node->pivots) {
+//        cout << "\t(" << pivot[0] << ")";
+//    }
+//    cout << endl;
+//}
+
 void MixTreeKmeans::rangeSearchImp(Node *node, Node* pre_node, float* query, float query_r, float pq_dis, vector<float> &ans_dis) {
     if (node->is_leaf) {  // leaf node
         if (node->end - node->start + 1 <= db->crack_threshold) {
