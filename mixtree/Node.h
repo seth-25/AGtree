@@ -17,8 +17,6 @@ public:
     NodeType type;
     bool is_leaf;
 
-    // leaf node
-    std::vector<float> cache_dis; // 到支枢点的距离，只在叶子缓存
 };
 
 class VNode : public Node {
@@ -36,6 +34,8 @@ public:
     Node* left_child;
     Node* right_child;
 
+    // leaf node
+    std::vector<float> cache_dis; // 到支枢点的距离，只在叶子缓存
 };
 
 class GNode : public Node {
@@ -43,7 +43,7 @@ public:
     GNode(int start_, int end_, int pivot_cnt_) :  // internal node
             Node(start_, end_, NodeType::GNode, false), pivot_cnt(pivot_cnt_) {}
 
-    GNode(int start_, int end_, int pivot_cnt_, std::vector<float> &cache_dist_) :  // leaf node
+    GNode(int start_, int end_, int pivot_cnt_, std::vector<std::vector<float>> &cache_dist_) :  // leaf node
             Node(start_, end_, NodeType::GNode, true), pivot_cnt(pivot_cnt_) {
         cache_dis.swap(cache_dist_);
     }
@@ -56,6 +56,6 @@ public:
     std::vector<std::vector<float>> max_dis;   // max_dis[a][b]：a到b内所有obj中最远的obj的距离
 
 
-//    // leaf node
-//    std::vector<float> cache_dis; // 到父亲支枢点的距离，只在叶子缓存
+    // leaf node
+    std::vector<std::vector<float>> cache_dis; // 各个数据到各个支枢点的距离，只在叶子缓存，cache_dis[a][b]代表第a个数据到第b个支枢点的距离
 };

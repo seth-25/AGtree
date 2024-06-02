@@ -8,13 +8,13 @@ using namespace std;
 
 
 MixTree::MixTree(DB *db_): db(db_) {
-    avg_pivot_cnt = 2;
-    max_pivot_cnt = 2;
-    min_pivot_cnt = 2;
+    avg_pivot_cnt = 5;
+    max_pivot_cnt = 5;
+    min_pivot_cnt = 5;
 }
 
 void MixTree::rangeSearch(float *query, float query_r, std::vector<float> &ans_dis) {
-    rangeSearchImp(root, nullptr, query, query_r, 0, ans_dis);
+    rangeSearchImp(root, nullptr, query, query_r, vector<float>(1, 0), ans_dis);
 }
 
 void MixTree::knnSearch(float *query, int k, AnsHeap &ans_dis) {

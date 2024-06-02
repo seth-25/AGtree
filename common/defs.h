@@ -47,7 +47,7 @@ static int func_type = 1;
 #ifdef L2
 static int func_type = 2;
 #define calc_dis(dim, data, query) l2_distance(dim, data, query)
-typedef std::tuple<float, Node *, Node *, float> NodeTuple;   // node_dis node pre_node pq_dis
+typedef std::tuple<float, Node *, Node *, std::vector<float>> NodeTuple;   // node_dis node pre_node pq_dis
 typedef std::pair<float, float *> AnsPair;
 typedef std::priority_queue<NodeTuple, std::vector<NodeTuple>, std::greater<NodeTuple>> NodeHeap;
 typedef std::priority_queue<AnsPair> AnsHeap;

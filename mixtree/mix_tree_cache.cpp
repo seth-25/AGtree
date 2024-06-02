@@ -116,11 +116,10 @@ void MixTreeCache::selectPivot(GNode *node, float *query) {
 
 
 void MixTreeCache::crackV(Node *node, float *query, float query_r, std::vector<float> &ans_dis) {
-    vector<float>().swap(node->cache_dis);
-
     node->is_leaf = false;
     assert(node->type == NodeType::VNode);
     VNode* v_node = (VNode*)node;
+    vector<float>().swap(v_node->cache_dis);
 
     for (int i = v_node->start; i <= v_node->end; i ++ ) {
         query_dist[i] = calc_dis(db->dimension, query, db->data[i]);
@@ -171,10 +170,6 @@ void MixTreeCache::crackV(Node *node, float *query, float query_r, std::vector<f
 }
 
 void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_r, vector<float>& ans_dis) {
-    vector<float>().swap(node->cache_dis);
-//    node->cache_dis.clear();
-//    node->cache_dis.shrink_to_fit();
-
     GNode* g_node;
     if (node->type == NodeType::GNode) {
         node->is_leaf = false;
@@ -200,6 +195,7 @@ void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_
             root = g_node;
         }
     }
+    vector<vector<float>>().swap(g_node->cache_dis);
 
     int pivot_cnt = g_node->pivot_cnt;
     g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
@@ -207,26 +203,21 @@ void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_
     selectPivot(g_node, query);
     cout << "G " << pivot_cnt << endl;
 
-    vector<float> tmp_dis(pivot_cnt);
-    vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id
-    vector<vector<float>> pivot_data_dist(pivot_cnt);    // 数据到分配的支枢点的距离
+    vector<float> tmp_dis(pivot_cnt);   // 当前数据到各个支枢点的距离，tmp_dis[i]表示到第i个支枢点的距离
+    vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id，pivot_data[i]代表分配给第i个支枢点的数据的id
+    vector<vector<vector<float>>> pivot_data_dist(pivot_cnt);    // 数据到分配的支枢点的距离，pivot_data_dist[i][x][j]代表分配给第i个支枢点的数据x，到第j个支枢点的距离
     int data_cnt = g_node->end - g_node->start + 1;
     for (int i = 0; i < data_cnt; i ++ ) {
         for (int j = 0; j < pivot_cnt; j ++ ) {
-            tmp_dis[j] = calc_dis(db->dimension, db->data[g_node->start + i], g_node->pivots[j]);   // 数据到第j个支枢点的距离
-            if (j == 0) {   // pivot is query
-                if (tmp_dis[j] <= query_r) {
-                    ans_dis.emplace_back(tmp_dis[j]);
-                }
-                search_calc_cnt ++;
-            }
-            else {
-                crack_calc_cnt ++;
+            tmp_dis[j] = calc_dis(db->dimension, db->data[g_node->start + i], g_node->pivots[j]);
+            if (j == 0 && tmp_dis[j] <= query_r) {   // pivot is query
+                ans_dis.emplace_back(tmp_dis[j]);
             }
         }
+        crack_calc_cnt += pivot_cnt;
         int closest_pivot = (int)(min_element(tmp_dis.begin(), tmp_dis.end()) - tmp_dis.begin());
         pivot_data[closest_pivot].emplace_back(g_node->start + i);
-        pivot_data_dist[closest_pivot].emplace_back(tmp_dis[closest_pivot]);
+        pivot_data_dist[closest_pivot].emplace_back(tmp_dis);
         for (int j = 0; j < pivot_cnt; j ++ ) {
             g_node->max_dis[j][closest_pivot] = max(g_node->max_dis[j][closest_pivot], tmp_dis[j]);    // 各个pivot到closest_pivot中最远的obj的距离
             g_node->min_dis[j][closest_pivot] = min(g_node->min_dis[j][closest_pivot], tmp_dis[j]);    // 各个pivot到closest_pivot中最近的obj的距离
@@ -261,18 +252,41 @@ void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_
 
 
 
-void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, float query_r, float pq_dis, vector<float> &ans_dis) {
+void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, float query_r, vector<float> pq_dis, vector<float> &ans_dis) {
     if (node->is_leaf) {  // leaf node
         if (node->end - node->start + 1 <= db->crack_threshold) {
             search_start
-            for (int i = node->start; i <= node->end; i ++ ) {
-                if (fabs(node->cache_dis[i - node->start] - pq_dis) > query_r) {  // todo 4 case(L2)
-                    continue;
+            if (node->type == NodeType::VNode) {
+                VNode* v_node = (VNode*) node;
+                for (int i = v_node->start; i <= v_node->end; i ++ ) {
+                    if (fabs(v_node->cache_dis[i - v_node->start] - pq_dis[0]) > query_r) {  // todo 4 case(L2)
+                        continue;
+                    }
+                    query_dist[i] = calc_dis(db->dimension, db->data[i], query);
+                    search_calc_cnt ++;
+                    if (query_dist[i] <= query_r) {
+                        ans_dis.emplace_back(query_dist[i]);
+                    }
                 }
-                query_dist[i] = calc_dis(db->dimension, db->data[i], query);
-                search_calc_cnt ++;
-                if (query_dist[i] <= query_r) {
-                    ans_dis.emplace_back(query_dist[i]);
+            }
+            else {
+                GNode *g_node = (GNode *) node;
+                bool ok;
+                for (int i = g_node->start; i <= g_node->end; i ++ ) {
+                    ok = true;
+                    for (int j = 0; j < g_node->pivot_cnt; j ++ ) {
+                        if (fabs(g_node->cache_dis[i - node->start][j] - pq_dis[j]) > query_r) {  // todo 4 case(L2)
+                            ok = false;
+                            break;
+                        }
+                    }
+                    if (!ok) continue;
+
+                    query_dist[i] = calc_dis(db->dimension, db->data[i], query);
+                    search_calc_cnt ++;
+                    if (query_dist[i] <= query_r) {
+                        ans_dis.emplace_back(query_dist[i]);
+                    }
                 }
             }
             search_end
@@ -295,12 +309,13 @@ void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, floa
     else {  // internal node
         if (node->type == NodeType::VNode) {   // VNode
             VNode* v_node = (VNode*) node;
-            float dis = calc_dis(db->dimension, v_node->pivot, query);
+            vector<float> dis(1);
+            dis[0] = calc_dis(db->dimension, v_node->pivot, query);
             search_calc_cnt ++;
             auto& left = v_node->left_child;
             auto& right = v_node->right_child;
-            if (dis < query_r + v_node->pivot_r) {
-                if (dis < query_r - v_node->pivot_r) {  // all data in left child is ans
+            if (dis[0] < query_r + v_node->pivot_r) {
+                if (dis[0] < query_r - v_node->pivot_r) {  // all data in left child is ans
                     for (int i = left->start; i <= left->end; i ++ ) {
                         ans_dis.emplace_back(calc_dis(db->dimension, query, db->data[i]));
                     }
@@ -309,7 +324,7 @@ void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, floa
                 }
                 else {
                     rangeSearchImp(left, node, query, query_r, dis, ans_dis);
-                    if (dis >= v_node->pivot_r - query_r) {
+                    if (dis[0] >= v_node->pivot_r - query_r) {
                         rangeSearchImp(right, node, query, query_r, dis, ans_dis);
                     }
                 }
@@ -322,7 +337,7 @@ void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, floa
         else if (node->type == NodeType::GNode){  // GNode
             GNode* g_node = (GNode*) node;
             size_t n = g_node->pivot_cnt;
-            float dis[n];
+            vector<float> dis(n);
             search_start
             for (size_t i = 0; i < n; i ++ ) {
                 dis[i] = calc_dis(db->dimension, g_node->pivots[i], query);
@@ -337,7 +352,7 @@ void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, floa
                 }
                 if (flag) {
                     auto& child = g_node->children[i];
-                    rangeSearchImp(child, node, query, query_r, dis[i], ans_dis);
+                    rangeSearchImp(child, node, query, query_r, dis, ans_dis);
                 }
             }
         }
@@ -353,11 +368,10 @@ void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, floa
 
 
 void MixTreeCache::knnCrackV(Node *node, float *query, int k, AnsHeap &ans_heap) {   // med cache
-    vector<float>().swap(node->cache_dis);
-
     node->is_leaf = false;
     assert(node->type == NodeType::VNode);
     VNode* v_node = (VNode*)node;
+    vector<float>().swap(v_node->cache_dis);
 
     for (int i = v_node->start; i <= v_node->end; i ++ ) {
         query_dist[i] = calc_dis(db->dimension, query, db->data[i]);
@@ -404,7 +418,7 @@ void MixTreeCache::knnCrackV(Node *node, float *query, int k, AnsHeap &ans_heap)
 
 
 void MixTreeCache::knnCrackG(Node *node, Node* pre_node, float *query, int k, AnsHeap &ans_dis) {
-    vector<float>().swap(node->cache_dis);
+
 //    node->cache_dis.clear();
 //    node->cache_dis.shrink_to_fit();
 
@@ -433,30 +447,29 @@ void MixTreeCache::knnCrackG(Node *node, Node* pre_node, float *query, int k, An
             root = g_node;
         }
     }
+    vector<vector<float>>().swap(g_node->cache_dis);
+
     int pivot_cnt = g_node->pivot_cnt;
 //    cout << "pivot cnt:" << pivot_cnt << endl;
     g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
     g_node->max_dis.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
     selectPivot(g_node, query);
 
-    vector<float> tmp_dis(pivot_cnt);
-    vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id
-    vector<vector<float>> pivot_data_dist(pivot_cnt);    // 数据到分配的支枢点的距离
+    vector<float> tmp_dis(pivot_cnt);   // 当前数据到各个支枢点的距离，tmp_dis[i]表示到第i个支枢点的距离
+    vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id，pivot_data[i]代表分配给第i个支枢点的数据的id
+    vector<vector<vector<float>>> pivot_data_dist(pivot_cnt);    // 数据到分配的支枢点的距离，pivot_data_dist[i][x][j]代表分配给第i个支枢点的数据x，到第j个支枢点的距离
     int data_cnt = g_node->end - g_node->start + 1;
     for (int i = 0; i < data_cnt; i ++ ) {
         for (int j = 0; j < pivot_cnt; j ++ ) {
-            tmp_dis[j] = calc_dis(db->dimension, db->data[g_node->start + i], g_node->pivots[j]);   // 数据到第j个支枢点的距离
+            tmp_dis[j] = calc_dis(db->dimension, db->data[g_node->start + i], g_node->pivots[j]);   // 当前数据到第j个支枢点的距离
             if (j == 0) {   // pivot is query
                 addAns(k, tmp_dis[j], db->data[g_node->start + i], ans_dis);
-                search_calc_cnt ++;
-            }
-            else {
-                crack_calc_cnt ++;
             }
         }
+        crack_calc_cnt += pivot_cnt;
         int closest_pivot = (int)(min_element(tmp_dis.begin(), tmp_dis.end()) - tmp_dis.begin());
         pivot_data[closest_pivot].emplace_back(g_node->start + i);
-        pivot_data_dist[closest_pivot].emplace_back(tmp_dis[closest_pivot]);
+        pivot_data_dist[closest_pivot].emplace_back(tmp_dis);
         for (int j = 0; j < pivot_cnt; j ++ ) {
             g_node->max_dis[j][closest_pivot] = max(g_node->max_dis[j][closest_pivot], tmp_dis[j]);    // 各个pivot到closest_pivot中最远的obj的距离
             g_node->min_dis[j][closest_pivot] = min(g_node->min_dis[j][closest_pivot], tmp_dis[j]);    // 各个pivot到closest_pivot中最近的obj的距离
@@ -484,26 +497,41 @@ void MixTreeCache::knnCrackG(Node *node, Node* pre_node, float *query, int k, An
     }
 }
 
-
-int cnt = 0;
-
 void MixTreeCache::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap) {
-    cnt ++; // todo delete
     while(!node_heap.empty() && (ans_heap.size() < k || get<0>(node_heap.top()) < ans_heap.top().first)) {
         NodeTuple node_tuple = node_heap.top();
         Node* node = get<1>(node_tuple);
-        float pq_dis = get<3>(node_tuple);
+        vector<float>& pq_dis = get<3>(node_tuple);
         if (node->is_leaf) {
             if (node->end - node->start + 1 <= db->crack_threshold) {
-                for (int i = node->start; i <= node->end; i ++ ) {
-                    if (ans_heap.size() >= k && fabs(node->cache_dis[i - node->start] - pq_dis) > ans_heap.top().first) {  // todo 4 case(L2)
-                        continue;
+                if (node->type == NodeType::VNode) {
+                    VNode* v_node = (VNode*) node;
+                    for (int i = v_node->start; i <= v_node->end; i ++ ) {
+                        if (ans_heap.size() >= k && fabs(v_node->cache_dis[i - v_node->start] - pq_dis[0]) > ans_heap.top().first) {  // todo 4 case(L2)
+                            continue;
+                        }
+                        query_dist[i] = calc_dis(db->dimension, query, db->data[i]);
+                        search_calc_cnt ++;
+                        addAns(k, query_dist[i], db->data[i], ans_heap);
                     }
-                    query_dist[i] = calc_dis(db->dimension, query, db->data[i]);
-//                    if (cnt == 998 && !ans_heap.empty())
-//                        cout << fabs(node->cache_dis[i - node->start] - pq_dis) << " " << query_dist[i] << " " <<  ans_heap.top().first << " " << ans_heap.size() << endl;
-                    search_calc_cnt ++;
-                    addAns(k, query_dist[i], db->data[i], ans_heap);
+                }
+                else {
+                    GNode* g_node = (GNode*) node;
+                    bool ok;
+                    for (int i = g_node->start; i <= g_node->end; i ++ ) {
+                        ok = true;
+                        for (int j = 0; j < g_node->pivot_cnt; j ++ ) {
+                            if (ans_heap.size() >= k && fabs(g_node->cache_dis[i - g_node->start][j] - pq_dis[j]) > ans_heap.top().first) {  // todo 4 case(L2)
+                                ok = false;
+                                break;
+                            }
+                        }
+
+                        if (!ok) continue;
+                        query_dist[i] = calc_dis(db->dimension, query, db->data[i]);
+                        search_calc_cnt ++;
+                        addAns(k, query_dist[i], db->data[i], ans_heap);
+                    }
                 }
             }
             else {
@@ -528,16 +556,17 @@ void MixTreeCache::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHea
                 VNode* v_node = (VNode*) node;
                 node_heap.pop();
                 float dis = calc_dis(db->dimension, v_node->pivot, query);
+                vector<float> new_dis(1, dis);
                 search_calc_cnt ++;
                 float left_min_dis = max(0.0f, dis - v_node->pivot_r);
                 float right_min_dis = max(0.0f, v_node->pivot_r - dis);
                 if (ans_heap.size() < k || left_min_dis < ans_heap.top().first) {
                     Node*& left = v_node->left_child;
-                    node_heap.emplace(left_min_dis, left, v_node, dis);
+                    node_heap.emplace(left_min_dis, left, v_node, new_dis);
                 }
                 if (ans_heap.size() < k || right_min_dis < ans_heap.top().first) {
                     Node*& right = v_node->right_child;
-                    node_heap.emplace(right_min_dis, right, v_node, dis);
+                    node_heap.emplace(right_min_dis, right, v_node, new_dis);
                 }
             }
             else if (node->type == NodeType::GNode) {
@@ -545,7 +574,7 @@ void MixTreeCache::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHea
                 GNode* g_node = (GNode*) node;
                 node_heap.pop();
                 size_t n = g_node->pivot_cnt;
-                float dis[n];
+                vector<float> dis(n);
                 search_start
                 for (size_t i = 0; i < n; i ++ ) {
                     dis[i] = calc_dis(db->dimension, g_node->pivots[i], query);
@@ -563,7 +592,7 @@ void MixTreeCache::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHea
                     }
                     if (flag) {
                         auto& child = g_node->children[i];
-                        node_heap.emplace(final_min_dis, child, node, dis[i]);
+                        node_heap.emplace(final_min_dis, child, node, dis);
                     }
                 }
             }

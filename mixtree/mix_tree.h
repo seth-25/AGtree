@@ -16,7 +16,7 @@ public:
 
     virtual void crackG(Node *node, Node* pre_node, float *query, float query_r, std::vector<float> &ans_dis) = 0;
 
-    virtual void rangeSearchImp(Node *node, Node* pre_node, float *query, float query_r, float pq_dis, std::vector<float> &ans_dis) = 0;
+    virtual void rangeSearchImp(Node *node, Node* pre_node, float *query, float query_r, std::vector<float> pq_dis, std::vector<float> &ans_dis) = 0;
 
 
     void knnSearch(float *query, int k, AnsHeap &ans_dis);
