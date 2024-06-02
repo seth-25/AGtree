@@ -18,39 +18,89 @@ MixTreeCache::~MixTreeCache() {
     delete root;
 }
 
-void MixTreeCache::selectPivot(GNode *node, float* query) {
-    //calc calc_dis between samples
-    int sample_cnt = min(node->pivot_cnt * 3, node->end - node->start + 2); // data + query
+//void MixTreeCache::selectPivot(GNode *node, float* query) {
+//    //calc calc_dis between samples
+//    int sample_cnt = min(node->pivot_cnt * 3, node->end - node->start + 2); // data + query
+//    std::vector<std::vector<float>> pivot_dis(sample_cnt, vector<float>(sample_cnt));
+//    for (int i = 0; i < sample_cnt - 1; i ++ ) {
+//        for (int j = 0; j < sample_cnt - 1; j ++ ) {
+////            if (i != j)
+//            pivot_dis[i][j] = pivot_dis[j][i] = calc_dis(db->dimension, db->data[node->start + i], db->data[node->start + j]);
+////            else
+////                pivot_dis[i][j] = pivot_dis[j][i] = 0;
+//        }
+//    }
+//    pivot_dis[sample_cnt - 1][sample_cnt - 1] = 0;
+//    for (int i = 0; i < sample_cnt - 1; i ++ ) {      // calc calc_dis between data and query
+//        pivot_dis[i][sample_cnt - 1] = pivot_dis[sample_cnt - 1][i] = calc_dis(db->dimension, db->data[node->start + i], query);
+//    }
+//    crack_calc_cnt += sample_cnt * sample_cnt;
+//
+//    //select query as first pivot
+//    vector<bool> is_pivot(sample_cnt, false);
+//    std::vector<int> pivot_pos(node->pivot_cnt);
+//    int p = sample_cnt - 1;
+//    pivot_pos[0] = p;
+//    is_pivot[p] = true;
+//
+//    // select pivots
+//    vector<float> min_dis(sample_cnt, FLT_MAX);
+//    for (int i = 1; i < node->pivot_cnt; i++) {
+//        for (int j = 0; j < sample_cnt; j++) {
+//            min_dis[j] = min(min_dis[j],  pivot_dis[j][pivot_pos[i - 1]]);   // min calc_dis between j and pivots which has selected
+//        }
+//        for (p = 0; is_pivot[p]; p++);    // initialize pivot p
+//        for (int j = p + 1; j < sample_cnt; j++) {
+//            if (min_dis[j] > min_dis[p] && !is_pivot[j]) {  // point that has max value of min calc_dis is the p
+//                p = j;
+//            }
+//        }
+//        pivot_pos[i] = p;
+//        is_pivot[p] = true;
+//    }
+//    node->pivots.emplace_back(query);
+//    for (int i = 1; i < node->pivot_cnt; i++) {
+//        node->pivots.emplace_back(db->data[node->start + pivot_pos[i]]);
+//    }
+//}
+
+void MixTreeCache::selectPivot(GNode *node, float *query) {
+    int sample_cnt = min(node->pivot_cnt * 3,
+                         node->end - node->start + 2); // num data = node->end - node->start + 1; num query = 1
     std::vector<std::vector<float>> pivot_dis(sample_cnt, vector<float>(sample_cnt));
-    for (int i = 0; i < sample_cnt - 1; i ++ ) {
-        for (int j = 0; j < sample_cnt - 1; j ++ ) {
+
+    pivot_dis[0][0] = 0;    // query is first pivot
+    for (int i = 1; i < sample_cnt; i++) {      // calc calc_dis between data and query
+        pivot_dis[i][0] = pivot_dis[0][i] = calc_dis(db->dimension, db->data[node->start + i - 1], query);
+    }
+    // calc calc_dis between data and data
+    for (int i = 1; i < sample_cnt; i++) {
+        for (int j = 1; j < sample_cnt; j++) {
 //            if (i != j)
-            pivot_dis[i][j] = pivot_dis[j][i] = calc_dis(db->dimension, db->data[node->start + i], db->data[node->start + j]);
+            pivot_dis[i][j] = pivot_dis[j][i] = calc_dis(db->dimension, db->data[node->start + i - 1],
+                                                         db->data[node->start + j - 1]);
 //            else
 //                pivot_dis[i][j] = pivot_dis[j][i] = 0;
         }
     }
-    pivot_dis[sample_cnt - 1][sample_cnt - 1] = 0;
-    for (int i = 0; i < sample_cnt - 1; i ++ ) {      // calc calc_dis between data and query
-        pivot_dis[i][sample_cnt - 1] = pivot_dis[sample_cnt - 1][i] = calc_dis(db->dimension, db->data[node->start + i], query);
-    }
     crack_calc_cnt += sample_cnt * sample_cnt;
 
-    //select query as first pivot
     vector<bool> is_pivot(sample_cnt, false);
     std::vector<int> pivot_pos(node->pivot_cnt);
-    int p = sample_cnt - 1;
-    pivot_pos[0] = p;
-    is_pivot[p] = true;
+    // select query as first pivot
+    pivot_pos[0] = 0;
+    is_pivot[0] = true;
 
     // select pivots
+    int p;
     vector<float> min_dis(sample_cnt, FLT_MAX);
     for (int i = 1; i < node->pivot_cnt; i++) {
         for (int j = 0; j < sample_cnt; j++) {
-            min_dis[j] = min(min_dis[j],  pivot_dis[j][pivot_pos[i - 1]]);   // min calc_dis between j and pivots which has selected
+            min_dis[j] = min(min_dis[j], pivot_dis[j][pivot_pos[i - 1]]);   // min calc_dis between j and pivots which has selected
         }
+
         for (p = 0; is_pivot[p]; p++);    // initialize pivot p
-        for (int j = p + 1; j < sample_cnt; j++) {
+        for (int j = p; j < sample_cnt; j++) {
             if (min_dis[j] > min_dis[p] && !is_pivot[j]) {  // point that has max value of min calc_dis is the p
                 p = j;
             }
@@ -60,7 +110,7 @@ void MixTreeCache::selectPivot(GNode *node, float* query) {
     }
     node->pivots.emplace_back(query);
     for (int i = 1; i < node->pivot_cnt; i++) {
-        node->pivots.emplace_back(db->data[node->start + pivot_pos[i]]);
+        node->pivots.emplace_back(db->data[node->start + pivot_pos[i] - 1]);
     }
 }
 
@@ -112,6 +162,7 @@ void MixTreeCache::crackV(Node *node, float *query, float query_r, std::vector<f
     vector<float> cache_right(v_node->end - r);
     std::swap_ranges(query_dist.begin() + v_node->start, query_dist.begin() + r + 1, cache_left.begin());
     std::swap_ranges(query_dist.begin() + r + 1, query_dist.begin() + v_node->end + 1, cache_right.begin());
+    cout << r - v_node->start + 1 << " " << v_node->end - r << endl;
 
     v_node->pivot = query;
     v_node->pivot_r = med_dis;
@@ -154,6 +205,7 @@ void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_
     g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
     g_node->max_dis.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
     selectPivot(g_node, query);
+    cout << "G " << pivot_cnt << endl;
 
     vector<float> tmp_dis(pivot_cnt);
     vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id
@@ -200,6 +252,11 @@ void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_
     for (int i = g_node->start; i <= g_node->end; i ++ ) {
         db->data[i] = data_tmp[i - g_node->start];
     }
+
+    for (int i = 0; i < pivot_data.size(); i ++ ) {
+        cout << pivot_data[i].size() << " ";
+    }
+    cout << "| " << g_node->end - g_node->start + 1 << endl;
 }
 
 

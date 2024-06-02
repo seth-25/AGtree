@@ -8,8 +8,8 @@ using namespace std;
 
 
 MixTree::MixTree(DB *db_): db(db_) {
-    avg_pivot_cnt = 5;
-    max_pivot_cnt = min(2 * avg_pivot_cnt, 256);
+    avg_pivot_cnt = 2;
+    max_pivot_cnt = 2;
     min_pivot_cnt = 2;
 }
 

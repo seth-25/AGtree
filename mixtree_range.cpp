@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
     total_start
     for (int i = 0; i < db->num_queries; i ++ ) {
         per_query_start
-        mixtree->rangeSearch(db->queries[i % 10], db->radius[i % 10], ans_dis);
+        mixtree->rangeSearch(db->queries[i], db->radius[i], ans_dis);
         per_query_end
 //        for (int j = 0; j < ans_dis.size(); j ++ ) {
 //            cout << ans_dis[j] << " " ;
@@ -52,6 +52,7 @@ int main(int argc, char **argv) {
         search_calc_cnt = 0, crack_calc_cnt = 0;
         total_ans += ans_dis.size();
         print_per_query_time
+        cout << endl;
         ans_dis.clear();
     }
     total_end
