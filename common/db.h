@@ -23,6 +23,7 @@ public:
     Method method;
     int crack_threshold;
     int tree_threshold;
+    int K;
 
     int num_data;
     int num_queries;

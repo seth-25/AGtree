@@ -4,6 +4,7 @@
 #include "record.h"
 #include "mix_tree_cache.h"
 #include "mix_tree_kmeans.h"
+#include "mix_tree_graph.h"
 
 using namespace std;
 
@@ -30,6 +31,9 @@ int main(int argc, char **argv) {
         case Method::KMEANS:
             mixtree = new MixTreeKmeans(db);
             break;
+        case Method::GRAPH:
+            mixtree = new MixTreeGraph(db);
+            break;
         default:
             cout << "method not found" << endl;
     }
@@ -41,7 +45,7 @@ int main(int argc, char **argv) {
     total_start
     for (int i = 0; i < db->num_queries; i ++ ) {
         per_query_start
-        mixtree->knnSearch(db->queries[i % db->num_queries], 10, ans_dis);
+        mixtree->knnSearch(db->queries[i % db->num_queries], db->K, ans_dis);
         per_query_end
         cout << i + 1 << "\t" << ans_dis.size() << "\t";
 

@@ -12,6 +12,7 @@ enum class Method {
     SAX,
     CACHE,
     KMEANS,
+    GRAPH,
 };
 
 

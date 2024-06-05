@@ -5,6 +5,7 @@
 enum class NodeType {
     VNode,
     GNode,
+    LeafNode
 };
 
 
@@ -16,7 +17,7 @@ public:
     int start, end; // range of point id
     NodeType type;
     bool is_leaf;
-
+    bool in_graph = false;
 };
 
 class VNode : public Node {
@@ -38,6 +39,7 @@ public:
     std::vector<float> cache_dis; // 到支枢点的距离，只在叶子缓存
 };
 
+
 class GNode : public Node {
 public:
     GNode(int start_, int end_, int pivot_cnt_) :  // internal node
@@ -58,4 +60,11 @@ public:
 
     // leaf node
     std::vector<std::vector<float>> cache_dis; // 各个数据到各个支枢点的距离，只在叶子缓存，cache_dis[a][b]代表第a个数据到第b个支枢点的距离
+};
+
+class LeafNode: public Node {
+public:
+    float *pivot;
+    std::vector<float> cache_dis; // 到支枢点的距离，只在叶子缓存
+    bool in_graph = false;
 };
