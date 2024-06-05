@@ -41,7 +41,6 @@ int main(int argc, char **argv) {
 //    float dis = calc_dis(db->dimension, db->queries[0], db->queries[1]);
 //    cout << "dis:" << dis;
 //    exit(0);
-
     total_start
     for (int i = 0; i < db->num_queries; i ++ ) {
         per_query_start
@@ -58,7 +57,7 @@ int main(int argc, char **argv) {
             cout << ans_dis.top().first << " ";
             ans_dis.pop();
         }
-        cout << endl;
+        cout << endl << endl;
         ans_dis = AnsHeap();
     }
     total_end

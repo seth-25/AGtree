@@ -8,27 +8,47 @@ MixTreeGraph::MixTreeGraph(DB *db_) : MixTreeKmeans(db_) {
     M = 64;
     efConstruction = 256;
 
-    hnswlib::L2Space l2space(db->dimension);
-    alg_hnsw = new hnswlib::HierarchicalNSW<float>(&l2space, db->num_data, M, efConstruction);  // todo N = db->num_data 可以变小
+    l2space = new hnswlib::L2Space(db->dimension);
+    alg_hnsw = new hnswlib::HierarchicalNSW<float>(l2space, db->num_data, M, efConstruction);  // todo N = db->num_data 可以变小
+}
+
+
+MixTreeGraph::~MixTreeGraph() {
+    delete alg_hnsw;
+    delete l2space;
 }
 
 void MixTreeGraph::addGraph(Node* node) {
+    int node_id = graph_nodes.size();
     graph_nodes.emplace_back(node);
-
-    node->in_graph = true;
+    if (node->type == NodeType::VNode) {
+        VNode* vnode = (VNode*) node;
+        alg_hnsw->addPoint(vnode->father_pivot, node_id);
+        cout << "add graph vnode" << endl;
+        cout << endl;
+        vnode->in_graph = true;
+    }
+    else {
+        GNode* gnode = (GNode*) node;
+        alg_hnsw->addPoint(gnode->father_pivot, node_id);
+        cout << "add graph gnode" << endl;
+        gnode->in_graph = true;
+    }
 }
 
-void MixTreeGraph::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap) {
+void MixTreeGraph::exactKnnSearch(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap, vector<int>& node_ids) {
     while(!node_heap.empty() && (ans_heap.size() < k || get<0>(node_heap.top()) < ans_heap.top().first)) {
         NodeTuple node_tuple = node_heap.top();
         Node* node = get<1>(node_tuple);
         vector<float>& pq_dis = get<3>(node_tuple);
         if (node->is_leaf) {
             if (node->end - node->start + 1 <= db->crack_threshold) {
-                if (node->in_graph) continue;
-
                 if (node->type == NodeType::VNode) {
                     VNode* v_node = (VNode*) node;
+                    if (v_node->has_search) {
+                        node_heap.pop();
+                        continue;
+                    }
                     for (int i = v_node->start; i <= v_node->end; i ++ ) {
                         if (ans_heap.size() >= k && fabs(v_node->cache_dis[i - v_node->start] - pq_dis[0]) > ans_heap.top().first) {  // todo 4 case(L2)
                             continue;
@@ -37,9 +57,16 @@ void MixTreeGraph::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHea
                         search_calc_cnt ++;
                         addAns(k, query_dist[i], db->data[i], ans_heap);
                     }
+                    if (!v_node->in_graph) {
+                        addGraph(node);
+                    }
                 }
                 else {
                     GNode* g_node = (GNode*) node;
+                    if (g_node->has_search) {
+                        node_heap.pop();
+                        continue;
+                    }
                     bool ok;
                     for (int i = g_node->start; i <= g_node->end; i ++ ) {
                         ok = true;
@@ -55,10 +82,10 @@ void MixTreeGraph::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHea
                         search_calc_cnt ++;
                         addAns(k, query_dist[i], db->data[i], ans_heap);
                     }
+                    if (!g_node->in_graph) {
+                        addGraph(node);
+                    }
                 }
-
-                // 加到hsnw中，in graph = true
-                addGraph(node);
             }
             else {
                 if (node->end - node->start + 1 <= db->tree_threshold) {
@@ -129,3 +156,76 @@ void MixTreeGraph::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHea
         }
     }
 }
+
+void MixTreeGraph::approximateKnnSearch(float *query, int k, NodeHeap &node_heap, AnsHeap &ans_heap, vector<int>& node_ids) {
+    if (graph_nodes.size() < 1000) return;
+    cout << "graph_nodes size " << graph_nodes.size() << endl;
+
+    std::priority_queue<std::pair<float, size_t>> result = alg_hnsw->searchKnn(query, k / 10);  // todo k / 10 hard code
+    int num_result = result.size();
+    node_ids.resize(num_result);
+    while (!result.empty()) {
+        node_ids[-- num_result] = result.top().second;
+        result.pop();
+    }
+    for (auto& node_id : node_ids) {
+        Node* node = graph_nodes[node_id];
+        if (node->type == NodeType::VNode) {
+            VNode* v_node = (VNode*) node;
+            v_node->has_search = true;
+            float pq_dis = calc_dis(db->dimension, query, v_node->father_pivot);
+            search_calc_cnt ++;
+            for (int i = v_node->start; i <= v_node->end; i ++ ) {
+                if (ans_heap.size() >= k && fabs(v_node->cache_dis[i - v_node->start] - pq_dis) > ans_heap.top().first) {  // todo 4 case(L2)
+                    continue;
+                }
+                query_dist[i] = calc_dis(db->dimension, query, db->data[i]);
+                search_calc_cnt ++;
+                addAns(k, query_dist[i], db->data[i], ans_heap);
+            }
+        }
+        else {
+            GNode* g_node = (GNode*) node;
+            g_node->has_search = true;
+            vector<float> pq_dis(g_node->cache_dis[0].size());
+            for (int i = 0; i < pq_dis.size(); i ++ ) {
+                pq_dis[i] = calc_dis(db->dimension, query, g_node->brother_pivots[i]);
+            }
+            search_calc_cnt += pq_dis.size();
+            bool ok;
+            for (int i = g_node->start; i <= g_node->end; i ++ ) {
+                ok = true;
+                for (int j = 0; j < g_node->pivot_cnt; j ++ ) {
+                    if (ans_heap.size() >= k && fabs(g_node->cache_dis[i - g_node->start][j] - pq_dis[j]) > ans_heap.top().first) {  // todo 4 case(L2)
+                        ok = false;
+                        break;
+                    }
+                }
+
+                if (!ok) continue;
+                query_dist[i] = calc_dis(db->dimension, query, db->data[i]);
+                search_calc_cnt ++;
+                addAns(k, query_dist[i], db->data[i], ans_heap);
+            }
+        }
+    }
+}
+
+void MixTreeGraph::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHeap &ans_heap) {
+    vector<int> node_ids;
+    approximateKnnSearch(query, k, node_heap, ans_heap, node_ids);
+    exactKnnSearch(query, k, node_heap, ans_heap, node_ids);
+    for (auto& node_id : node_ids) {
+        Node* node = graph_nodes[node_id];
+        if (node->type == NodeType::VNode) {
+            VNode* v_node = (VNode*) node;
+            v_node->has_search = false;
+        }
+        else {
+            GNode* g_node = (GNode*) node;
+            g_node->has_search = false;
+
+        }
+    }
+}
+

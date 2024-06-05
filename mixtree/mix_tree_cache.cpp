@@ -10,7 +10,7 @@ using namespace std;
 MixTreeCache::MixTreeCache(DB *db_): MixTree(db_) {
     query_dist.resize(db->num_data);
     vector<float> cache_dis(db->num_data, 0);
-    root = new VNode(0, db->num_data - 1, cache_dis);
+    root = new VNode(0, db->num_data - 1, nullptr, cache_dis);
 }
 
 
@@ -165,8 +165,8 @@ void MixTreeCache::crackV(Node *node, float *query, float query_r, std::vector<f
 
     v_node->pivot = query;
     v_node->pivot_r = med_dis;
-    v_node->left_child = new VNode(v_node->start, r, cache_left);
-    v_node->right_child = new VNode(r + 1, v_node->end, cache_right);
+    v_node->left_child = new VNode(v_node->start, r, query, cache_left);
+    v_node->right_child = new VNode(r + 1, v_node->end, query, cache_right);
 }
 
 void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_r, vector<float>& ans_dis) {
@@ -237,7 +237,7 @@ void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_
         int next_pivot_cnt = (int)pivot_data[i].size() * avg_pivot_cnt * pivot_cnt / data_cnt;
         next_pivot_cnt = max(min_pivot_cnt, next_pivot_cnt);
         next_pivot_cnt = min(max_pivot_cnt, next_pivot_cnt);
-        GNode* leaf_node = new GNode(new_node_start, new_node_end, next_pivot_cnt, pivot_data_dist[i]);
+        GNode* leaf_node = new GNode(new_node_start, new_node_end, next_pivot_cnt, g_node->pivots[i], g_node->pivots, pivot_data_dist[i]);
         g_node->children.emplace_back(leaf_node);
     }
     for (int i = g_node->start; i <= g_node->end; i ++ ) {
@@ -274,7 +274,7 @@ void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, floa
                 bool ok;
                 for (int i = g_node->start; i <= g_node->end; i ++ ) {
                     ok = true;
-                    for (int j = 0; j < g_node->pivot_cnt; j ++ ) {
+                    for (int j = 0; j < g_node->cache_dis[0].size(); j ++ ) {
                         if (fabs(g_node->cache_dis[i - node->start][j] - pq_dis[j]) > query_r) {  // todo 4 case(L2)
                             ok = false;
                             break;
@@ -412,8 +412,8 @@ void MixTreeCache::knnCrackV(Node *node, float *query, int k, AnsHeap &ans_heap)
 
     v_node->pivot = query;
     v_node->pivot_r = med_dis;
-    v_node->left_child = new VNode(v_node->start, r, cache_left);
-    v_node->right_child = new VNode(r + 1, v_node->end, cache_right);
+    v_node->left_child = new VNode(v_node->start, r, query, cache_left);
+    v_node->right_child = new VNode(r + 1, v_node->end, query, cache_right);
 }
 
 
@@ -489,7 +489,7 @@ void MixTreeCache::knnCrackG(Node *node, Node* pre_node, float *query, int k, An
         int next_pivot_cnt = (int)pivot_data[i].size() * avg_pivot_cnt * pivot_cnt / data_cnt;
         next_pivot_cnt = max(min_pivot_cnt, next_pivot_cnt);
         next_pivot_cnt = min(max_pivot_cnt, next_pivot_cnt);
-        GNode* leaf_node = new GNode(new_node_start, new_node_end, next_pivot_cnt, pivot_data_dist[i]);
+        GNode* leaf_node = new GNode(new_node_start, new_node_end, next_pivot_cnt, g_node->pivots[i], g_node->pivots, pivot_data_dist[i]);
         g_node->children.emplace_back(leaf_node);
     }
     for (int i = g_node->start; i <= g_node->end; i ++ ) {
@@ -520,7 +520,7 @@ void MixTreeCache::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHea
                     bool ok;
                     for (int i = g_node->start; i <= g_node->end; i ++ ) {
                         ok = true;
-                        for (int j = 0; j < g_node->pivot_cnt; j ++ ) {
+                        for (int j = 0; j < g_node->cache_dis[0].size(); j ++ ) {
                             if (ans_heap.size() >= k && fabs(g_node->cache_dis[i - g_node->start][j] - pq_dis[j]) > ans_heap.top().first) {  // todo 4 case(L2)
                                 ok = false;
                                 break;

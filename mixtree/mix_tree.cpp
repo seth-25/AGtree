@@ -4,12 +4,14 @@
 #include "Node.h"
 #include "record.h"
 
+#include "mix_tree_graph.h"
+
 using namespace std;
 
 
 MixTree::MixTree(DB *db_): db(db_) {
-    avg_pivot_cnt = 2;
-    max_pivot_cnt = 2;
+    avg_pivot_cnt = 3;
+    max_pivot_cnt = 3;
     min_pivot_cnt = 2;
 }
 

@@ -5,7 +5,7 @@
 #include <queue>
 #include <cstring>
 int main() {
-    int N = 500, D = 100, K = 100;
+    int N = 500,D = 100, K = 100;
 
     //////////////////////
     int M = std::min(64, D);
