@@ -14,9 +14,9 @@ public:
 
     void addGraph(Node *node);
 
-    void approximateKnnSearch(float *query, int k, NodeHeap &node_heap, AnsHeap &ans_heap, std::vector<int>& node_ids);
+    void approximateKnnSearch(float *query, int k, NodeHeap &node_heap, AnsHeap &ans_heap, std::vector<std::pair<float, size_t>>& node_pairs);
 
-    void exactKnnSearch(float *query, int k, NodeHeap &node_heap, AnsHeap &ans_heap, std::vector<int>& node_ids);
+    void exactKnnSearch(float *query, int k, NodeHeap &node_heap, AnsHeap &ans_heap);
 
     int M;
     int efConstruction;

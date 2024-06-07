@@ -21,9 +21,6 @@ public:
 
 class VNode : public Node {
 public:
-    VNode(int start_, int end_) :  // internal node
-            Node(start_, end_, NodeType::VNode, false) {}
-
     VNode(int start_, int end_, float *father_pivot_, std::vector<float> &cache_dist_) :  // leaf node
             Node(start_, end_, NodeType::VNode, true), father_pivot(father_pivot_) {
         cache_dis.swap(cache_dist_);

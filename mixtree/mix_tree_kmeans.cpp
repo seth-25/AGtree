@@ -28,10 +28,10 @@ float MixTreeKmeans::chose_split_dis(Node* node, int num_cluster) {
     int target_label = means[0][0] < means[1][0] ? 0 : 1;
 
     cout << "start end " << node->start << " " << node->end << endl;
-    for (int i = node->start; i < node->start + rnd_num; i ++ ) {
-        cout << db->data[i][0] << " ";
-    }
-    cout << endl;
+//    for (int i = node->start; i < node->start + rnd_num; i ++ ) {
+//        cout << db->data[i][0] << " ";
+//    }
+//    cout << endl;
     {   // todo delete
         cout << "target_label:" << target_label << endl;
         cout << "Means:";
