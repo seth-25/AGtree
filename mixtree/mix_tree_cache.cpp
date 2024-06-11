@@ -10,7 +10,7 @@ using namespace std;
 MixTreeCache::MixTreeCache(DB *db_): MixTree(db_) {
     query_dist.resize(db->num_data);
     vector<float> cache_dis(db->num_data, 0);
-    root = new VNode(0, db->num_data - 1, nullptr, cache_dis);
+    root = new VNode(0, db->num_data - 1, nullptr, 0, cache_dis);
 }
 
 
@@ -165,8 +165,8 @@ void MixTreeCache::crackV(Node *node, float *query, float query_r, std::vector<f
 
     v_node->pivot = query;
     v_node->pivot_r = med_dis;
-    v_node->left_child = new VNode(v_node->start, r, query, cache_left);
-    v_node->right_child = new VNode(r + 1, v_node->end, query, cache_right);
+    v_node->left_child = new VNode(v_node->start, r, query, med_dis, cache_left);
+    v_node->right_child = new VNode(r + 1, v_node->end, query, med_dis, cache_right);
 }
 
 void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_r, vector<float>& ans_dis) {
@@ -412,8 +412,8 @@ void MixTreeCache::knnCrackV(Node *node, float *query, int k, AnsHeap &ans_heap)
 
     v_node->pivot = query;
     v_node->pivot_r = med_dis;
-    v_node->left_child = new VNode(v_node->start, r, query, cache_left);
-    v_node->right_child = new VNode(r + 1, v_node->end, query, cache_right);
+    v_node->left_child = new VNode(v_node->start, r, query, med_dis, cache_left);
+    v_node->right_child = new VNode(r + 1, v_node->end, query, med_dis, cache_right);
 }
 
 

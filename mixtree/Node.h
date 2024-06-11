@@ -21,8 +21,8 @@ public:
 
 class VNode : public Node {
 public:
-    VNode(int start_, int end_, float *father_pivot_, std::vector<float> &cache_dist_) :  // leaf node
-            Node(start_, end_, NodeType::VNode, true), father_pivot(father_pivot_) {
+    VNode(int start_, int end_, float *father_pivot_, float father_pivot_r_, std::vector<float> &cache_dist_) :  // leaf node
+            Node(start_, end_, NodeType::VNode, true), father_pivot(father_pivot_), father_pivot_r(father_pivot_r_) {
         cache_dis.swap(cache_dist_);
     }
 //    VNode(int start_, int end_, std::vector<float> &cache_dist_) :  // leaf node
@@ -40,6 +40,7 @@ public:
     bool in_graph = false;
     bool has_search = false;
     float *father_pivot;
+    float father_pivot_r;
     std::vector<float> cache_dis; // 到支枢点的距离，只在叶子缓存
 };
 

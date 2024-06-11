@@ -18,7 +18,6 @@ MixTreeGraph::~MixTreeGraph() {
     delete l2space;
 }
 
-float * query_tmp;
 void MixTreeGraph::addGraph(Node* node) {
     int node_id = graph_nodes.size();
     graph_nodes.emplace_back(node);
@@ -41,6 +40,7 @@ void MixTreeGraph::exactKnnSearch(float* query, int k, NodeHeap &node_heap, AnsH
         NodeTuple node_tuple = node_heap.top();
         Node* node = get<1>(node_tuple);
         vector<float>& pq_dis = get<3>(node_tuple);
+        cout << "node dis:" << get<0>(node_tuple) << "   " <<  (pq_dis.size() > 0 ? pq_dis[0] : -1) << endl;
         if (node->is_leaf) {
             if (node->end - node->start + 1 <= db->crack_threshold) {
                 if (node->type == NodeType::VNode) {
@@ -105,7 +105,6 @@ void MixTreeGraph::exactKnnSearch(float* query, int k, NodeHeap &node_heap, AnsH
                 }
             }
             node_heap.pop();
-
 
             cout << "exact search calc:" << search_calc_cnt << endl;
             cout << "exact ans dis:" << ans_heap.size() << " " << ((ans_heap.size() > 0) ? ans_heap.top().first : -1) << endl;
@@ -176,14 +175,25 @@ void MixTreeGraph::approximateKnnSearch(float *query, int k, NodeHeap &node_heap
         result.pop();
     }
     cout << endl;
+
+    std::sort(node_pairs.begin(), node_pairs.end(),
+        [&](const std::pair<float, size_t>& a, const std::pair<float, size_t>& b) {
+          if (a.first != b.first) {
+              return a.first < b.first;
+          } else {
+              return true;
+              return ((VNode*)graph_nodes[a.second])->father_pivot_r < ((VNode*)graph_nodes[b.second])->father_pivot_r;
+          }
+        }
+    );
+
     cout << "node id: ";
-//    for (auto &node_id : node_pairs) {
-    for (int id = (int)node_pairs.size() - 1; id >= 0; id --) {
+    for (int id = 0; id < node_pairs.size(); id ++) {
+//    for (int id = (int)node_pairs.size() - 1; id >= 0; id --) {
         float pivot_dis = node_pairs[id].first;
         int node_id = node_pairs[id].second;
         if (pivot_dis > 1) break;
 //        if (pivot_dis > 1 || (ans_heap.size() == k && pivot_dis > ans_heap.top().first)) break;
-        cout << "(" << node_id << ", " << node_pairs[id].first << ", " << ans_heap.size() << ", " << ((ans_heap.size() > 0) ? ans_heap.top().first : -1) << ") ";
         Node* node = graph_nodes[node_id];
         if (node->type == NodeType::VNode) {
             VNode* v_node = (VNode*) node;
@@ -223,6 +233,7 @@ void MixTreeGraph::approximateKnnSearch(float *query, int k, NodeHeap &node_heap
                 addAns(k, query_dist[i], db->data[i], ans_heap);
             }
         }
+        cout << "(" << node_id << ", " << node_pairs[id].first << ", " << ans_heap.size() << ", " << ((ans_heap.size() > 0) ? ans_heap.top().first : -1) << ") ";
     }
     cout << endl;
 }
