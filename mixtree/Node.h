@@ -16,7 +16,6 @@ public:
     int start, end; // range of point id
     NodeType type;
     bool is_leaf;
-
 };
 
 class VNode : public Node {

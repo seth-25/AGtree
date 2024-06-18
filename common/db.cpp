@@ -20,7 +20,7 @@ namespace common {
     void parse_parameter(int argc, char **argv) {
         DB *db = the_db();
         int opt;
-        while ((opt = getopt(argc, argv, "t:T:csk")) > 0) {
+        while ((opt = getopt(argc, argv, "t:T:K:cskg")) > 0) {
             switch (opt) {
                 case 't':
                     db->crack_threshold = atoi(optarg);
@@ -28,8 +28,11 @@ namespace common {
                 case 'T':
                     db->tree_threshold = atoi(optarg);
                     break;
+                case 'K':
+                    db->K = atoi(optarg);
+                    break;
                 case 's':
-                    db->method = Method::SAX;
+                    db->method = Method::SELECTOR;
                     break;
                 case 'c':
                     db->method = Method::CACHE;

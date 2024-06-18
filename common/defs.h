@@ -9,7 +9,7 @@
 #include <functional>
 
 enum class Method {
-    SAX,
+    SELECTOR,
     CACHE,
     KMEANS,
 };

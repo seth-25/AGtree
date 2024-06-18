@@ -274,7 +274,7 @@ void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, floa
                 bool ok;
                 for (int i = g_node->start; i <= g_node->end; i ++ ) {
                     ok = true;
-                    for (int j = 0; j < g_node->pivot_cnt; j ++ ) {
+                    for (int j = 0; j < g_node->cache_dis[0].size(); j ++ ) {
                         if (fabs(g_node->cache_dis[i - node->start][j] - pq_dis[j]) > query_r) {  // todo 4 case(L2)
                             ok = false;
                             break;
@@ -520,7 +520,7 @@ void MixTreeCache::knnSearchImp(float* query, int k, NodeHeap &node_heap, AnsHea
                     bool ok;
                     for (int i = g_node->start; i <= g_node->end; i ++ ) {
                         ok = true;
-                        for (int j = 0; j < g_node->pivot_cnt; j ++ ) {
+                        for (int j = 0; j < g_node->cache_dis[0].size(); j ++ ) {
                             if (ans_heap.size() >= k && fabs(g_node->cache_dis[i - g_node->start][j] - pq_dis[j]) > ans_heap.top().first) {  // todo 4 case(L2)
                                 ok = false;
                                 break;

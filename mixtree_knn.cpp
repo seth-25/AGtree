@@ -37,11 +37,10 @@ int main(int argc, char **argv) {
 //    float dis = calc_dis(db->dimension, db->queries[0], db->queries[1]);
 //    cout << "dis:" << dis;
 //    exit(0);
-
     total_start
     for (int i = 0; i < db->num_queries; i ++ ) {
         per_query_start
-        mixtree->knnSearch(db->queries[i % db->num_queries], 10, ans_dis);
+        mixtree->knnSearch(db->queries[i % db->num_queries], db->K, ans_dis);
         per_query_end
         cout << i + 1 << "\t" << ans_dis.size() << "\t";
 
@@ -54,7 +53,7 @@ int main(int argc, char **argv) {
             cout << ans_dis.top().first << " ";
             ans_dis.pop();
         }
-        cout << endl;
+        cout << endl << endl;
         ans_dis = AnsHeap();
     }
     total_end
