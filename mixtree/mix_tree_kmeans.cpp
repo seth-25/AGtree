@@ -12,7 +12,7 @@ MixTreeKmeans::MixTreeKmeans(DB *db_): MixTreeCache(db_) {
 
     query_dist.resize(db->num_data);
     vector<float> cache_dis(db->num_data, 0);
-    root = new VNode(0, db->num_data - 1, nullptr, cache_dis);
+    root = new VNode(0, db->num_data - 1, cache_dis);
 }
 
 
@@ -118,8 +118,8 @@ void MixTreeKmeans::crackV(Node *node, float *query, float query_r, std::vector<
 
     v_node->pivot = query;
     v_node->pivot_r = split_dis;
-    v_node->left_child = new VNode(v_node->start, r, query, cache_left);
-    v_node->right_child = new VNode(r + 1, v_node->end, query, cache_right);
+    v_node->left_child = new VNode(v_node->start, r, cache_left);
+    v_node->right_child = new VNode(r + 1, v_node->end, cache_right);
 }
 
 //void MixTreeKmeans::selectPivot(GNode *node, float* query) {
@@ -259,17 +259,11 @@ void MixTreeKmeans::crackG(Node *node, Node* pre_node, float *query, float query
     }
     vector<vector<float>>().swap(g_node->cache_dis);
 
-    int pivot_cnt = g_node->pivot_cnt;
-    g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
-    g_node->max_dis.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
     selectPivot(g_node, query);
-    cout << "G " << pivot_cnt << endl;
-
 
 //    sort(db->data + g_node->start, db->data + g_node->end + 1, [&](const float* a, const float* b) {    // todo del
 //        return a[0] < b[0];
 //    });
-
     for (int i = g_node->start; i <= g_node->end; i ++ ) {
         query_dist[i] = calc_dis(db->dimension, query, db->data[i]);
     }
@@ -278,6 +272,10 @@ void MixTreeKmeans::crackG(Node *node, Node* pre_node, float *query, float query
 //    float split_dis = chose_split_dis(g_node, g_node->pivot_cnt);
     float split_dis = chose_split_dis(g_node, 2);
 
+    int pivot_cnt = g_node->pivot_cnt;
+    g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
+    g_node->max_dis.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
+    cout << "G " << pivot_cnt << endl;
     vector<float> tmp_dis(pivot_cnt);   // 当前数据到各个支枢点的距离，tmp_dis[i]表示到第i个支枢点的距离
     vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id，pivot_data[i]代表分配给第i个支枢点的数据的id
     vector<vector<vector<float>>> pivot_data_dist(pivot_cnt);    // 数据到分配的支枢点的距离，pivot_data_dist[i][x][j]代表分配给第i个支枢点的数据x，到第j个支枢点的距离
@@ -323,7 +321,7 @@ void MixTreeKmeans::crackG(Node *node, Node* pre_node, float *query, float query
         int next_pivot_cnt = (int)pivot_data[i].size() * avg_pivot_cnt * pivot_cnt / data_cnt;
         next_pivot_cnt = max(min_pivot_cnt, next_pivot_cnt);
         next_pivot_cnt = min(max_pivot_cnt, next_pivot_cnt);
-        GNode* leaf_node = new GNode(new_node_start, new_node_end, next_pivot_cnt, g_node->pivots[i], g_node->pivots, pivot_data_dist[i]);
+        GNode* leaf_node = new GNode(new_node_start, new_node_end, next_pivot_cnt, pivot_data_dist[i]);
         g_node->children.emplace_back(leaf_node);
     }
     for (int i = g_node->start; i <= g_node->end; i ++ ) {
@@ -375,8 +373,8 @@ void MixTreeKmeans::knnCrackV(Node *node, float *query, int k, AnsHeap &ans_heap
 
     v_node->pivot = query;
     v_node->pivot_r = split_dis;
-    v_node->left_child = new VNode(v_node->start, r, query, cache_left);
-    v_node->right_child = new VNode(r + 1, v_node->end, query, cache_right);
+    v_node->left_child = new VNode(v_node->start, r, cache_left);
+    v_node->right_child = new VNode(r + 1, v_node->end, cache_right);
 }
 
 void MixTreeKmeans::knnCrackG(Node *node, Node* pre_node, float *query, int k, AnsHeap &ans_dis) {
@@ -461,7 +459,7 @@ void MixTreeKmeans::knnCrackG(Node *node, Node* pre_node, float *query, int k, A
         int next_pivot_cnt = (int)pivot_data[i].size() * avg_pivot_cnt * pivot_cnt / data_cnt;
         next_pivot_cnt = max(min_pivot_cnt, next_pivot_cnt);
         next_pivot_cnt = min(max_pivot_cnt, next_pivot_cnt);
-        GNode* leaf_node = new GNode(new_node_start, new_node_end, next_pivot_cnt, g_node->pivots[i], g_node->pivots, pivot_data_dist[i]);
+        GNode* leaf_node = new GNode(new_node_start, new_node_end, next_pivot_cnt, pivot_data_dist[i]);
         g_node->children.emplace_back(leaf_node);
     }
     for (int i = g_node->start; i <= g_node->end; i ++ ) {

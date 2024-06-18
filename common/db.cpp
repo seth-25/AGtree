@@ -32,7 +32,7 @@ namespace common {
                     db->K = atoi(optarg);
                     break;
                 case 's':
-                    db->method = Method::SAX;
+                    db->method = Method::SELECTOR;
                     break;
                 case 'c':
                     db->method = Method::CACHE;
