@@ -32,6 +32,7 @@ int main(int argc, char **argv) {
             break;
         default:
             cout << "method not found" << endl;
+            return 0;
     }
 
 //    float dis = calc_dis(db->dimension, db->queries[0], db->queries[1]);

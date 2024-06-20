@@ -314,8 +314,8 @@ void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, floa
             search_calc_cnt ++;
             auto& left = v_node->left_child;
             auto& right = v_node->right_child;
-            if (dis[0] < query_r + v_node->pivot_r) {
-                if (dis[0] < query_r - v_node->pivot_r) {  // all data in left child is ans
+            if (dis[0] <= query_r + v_node->pivot_r) {
+                if (dis[0] <= query_r - v_node->pivot_r) {  // all data in left child is ans
                     for (int i = left->start; i <= left->end; i ++ ) {
                         ans_dis.emplace_back(calc_dis(db->dimension, query, db->data[i]));
                     }
@@ -324,7 +324,7 @@ void MixTreeCache::rangeSearchImp(Node *node, Node* pre_node, float* query, floa
                 }
                 else {
                     rangeSearchImp(left, node, query, query_r, dis, ans_dis);
-                    if (dis[0] >= v_node->pivot_r - query_r) {
+                    if (dis[0] > v_node->pivot_r - query_r) {
                         rangeSearchImp(right, node, query, query_r, dis, ans_dis);
                     }
                 }
