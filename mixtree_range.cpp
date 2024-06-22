@@ -4,6 +4,7 @@
 #include "record.h"
 #include "mix_tree_cache.h"
 #include "mix_tree_kmeans.h"
+#include "mix_tree_selector.h"
 
 using namespace std;
 
@@ -29,6 +30,9 @@ int main(int argc, char **argv) {
             break;
         case Method::KMEANS:
             mixtree = new MixTreeKmeans(db);
+            break;
+        case Method::SELECTOR:
+            mixtree = new MixTreeSelector(db);
             break;
         default:
             cout << "method not found" << endl;
