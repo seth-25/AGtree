@@ -1,6 +1,7 @@
 #include "db.h"
 #include <vector>
 #include <algorithm>
+#include "record.h"
 using namespace std;
 
 int main(int argc, char **argv) {
@@ -18,23 +19,27 @@ int main(int argc, char **argv) {
     vector<float> ans_dis;
 
     int total_ans = 0;
+    total_start
     for (int i = 0; i < db->num_queries; i ++ ) {
         for (int j = 0; j < db->num_data; j ++ ) {
             float dis = calc_dis(db->dimension, db->data[j], db->queries[i]);
+            total_search_calc_cnt ++;
             if (dis <= db->radius[i]) {
                 ans_dis.emplace_back(dis);
             }
         }
         cout << i << ": " << ans_dis.size() << endl;
         total_ans += ans_dis.size();
-        sort(ans_dis.begin(), ans_dis.end());
-        for (int j = 0; j < ans_dis.size(); j ++ ) {
-            cout << ans_dis[j] << " " ;
-//            cout << j << " " << ans_dis[j] << endl;
-        }
-        cout << endl << endl;
+//        sort(ans_dis.begin(), ans_dis.end());
+//        for (int j = 0; j < ans_dis.size(); j ++ ) {
+//            cout << ans_dis[j] << " " ;
+////            cout << j << " " << ans_dis[j] << endl;
+//        }
+//        cout << endl << endl;
         ans_dis.clear();
     }
-    cout << total_ans << endl;
+    total_end
+    print_total_time
+    cout << total_ans << " " << total_search_calc_cnt << endl;
 
 }

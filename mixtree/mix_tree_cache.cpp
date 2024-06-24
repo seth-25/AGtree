@@ -116,7 +116,6 @@ void MixTreeCache::crackV(Node *node, float *query, float query_r, std::vector<f
     vector<float> cache_right(v_node->end - r);
     std::swap_ranges(query_dist.begin() + v_node->start, query_dist.begin() + r + 1, cache_left.begin());
     std::swap_ranges(query_dist.begin() + r + 1, query_dist.begin() + v_node->end + 1, cache_right.begin());
-    cout << r - v_node->start + 1 << " " << v_node->end - r << endl;
 
     v_node->pivot = query;
     v_node->pivot_r = med_dis;
@@ -156,7 +155,7 @@ void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_
     g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
     g_node->max_dis.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
     selectPivot(g_node, query);
-    cout << "G " << pivot_cnt << endl;
+//    cout << "G " << pivot_cnt << endl;
 
     vector<float> tmp_dis(pivot_cnt);   // 当前数据到各个支枢点的距离，tmp_dis[i]表示到第i个支枢点的距离
     vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id，pivot_data[i]代表分配给第i个支枢点的数据的id
@@ -199,10 +198,10 @@ void MixTreeCache::crackG(Node *node, Node* pre_node, float *query, float query_
         db->data[i] = data_tmp[i - g_node->start];
     }
 
-    for (int i = 0; i < pivot_data.size(); i ++ ) {
-        cout << pivot_data[i].size() << " ";
-    }
-    cout << "| " << g_node->end - g_node->start + 1 << endl;
+//    for (int i = 0; i < pivot_data.size(); i ++ ) {
+//        cout << pivot_data[i].size() << " ";
+//    }
+//    cout << "| " << g_node->end - g_node->start + 1 << endl;
 }
 
 
@@ -405,7 +404,6 @@ void MixTreeCache::knnCrackG(Node *node, Node* pre_node, float *query, int k, An
     vector<vector<float>>().swap(g_node->cache_dis);
 
     int pivot_cnt = g_node->pivot_cnt;
-//    cout << "pivot cnt:" << pivot_cnt << endl;
     g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
     g_node->max_dis.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
     selectPivot(g_node, query);

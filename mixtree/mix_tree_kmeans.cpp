@@ -27,19 +27,19 @@ float MixTreeKmeans::chose_split_dis(Node* node, int num_cluster) {
     const auto& labels = std::get<1>(k_res);
     int target_label = means[0][0] < means[1][0] ? 0 : 1;
 
-    cout << "start end " << node->start << " " << node->end << endl;
-//    for (int i = node->start; i < node->start + rnd_num; i ++ ) {
-//        cout << db->data[i][0] << " ";
+//    cout << "start end " << node->start << " " << node->end << endl;
+////    for (int i = node->start; i < node->start + rnd_num; i ++ ) {
+////        cout << db->data[i][0] << " ";
+////    }
+////    cout << endl;
+//    {   // todo delete
+//        cout << "target_label:" << target_label << endl;
+//        cout << "Means:";
+//        for (const auto& mean : means) {
+//            cout << "\t(" << mean[0] << ")";
+//        }
+//        cout << endl;
 //    }
-//    cout << endl;
-    {   // todo delete
-        cout << "target_label:" << target_label << endl;
-        cout << "Means:";
-        for (const auto& mean : means) {
-            cout << "\t(" << mean[0] << ")";
-        }
-        cout << endl;
-    }
 
 
     float split_dis = 0;
@@ -55,13 +55,13 @@ float MixTreeKmeans::chose_split_dis(Node* node, int num_cluster) {
         }
     }
 
-    cout << "clusters:" << cnt0 << " " << cnt1 << endl; // todo delete
-    cout << "split_dis:" << split_dis << endl; // todo delete
+//    cout << "clusters:" << cnt0 << " " << cnt1 << endl; // todo delete
+//    cout << "split_dis:" << split_dis << endl; // todo delete
     return split_dis;
 }
 
 void MixTreeKmeans::crackV(Node *node, float *query, float query_r, std::vector<float> &ans_dis) {
-    cout << "kmeans crack V" << endl;
+//    cout << "kmeans crack V" << endl;
     node->is_leaf = false;
     assert(node->type == NodeType::VNode);
     VNode* v_node = (VNode*)node;
@@ -113,7 +113,7 @@ void MixTreeKmeans::crackV(Node *node, float *query, float query_r, std::vector<
     std::swap_ranges(query_dist.begin() + v_node->start, query_dist.begin() + r + 1, cache_left.begin());
     std::swap_ranges(query_dist.begin() + r + 1, query_dist.begin() + v_node->end + 1, cache_right.begin());
 
-    cout << "split num:" << cache_left.size() << " " << cache_right.size() << endl; // todo delete
+//    cout << "split num:" << cache_left.size() << " " << cache_right.size() << endl; // todo delete
 
 
     v_node->pivot = query;
@@ -166,7 +166,7 @@ void MixTreeKmeans::crackG(Node *node, Node* pre_node, float *query, float query
     int pivot_cnt = g_node->pivot_cnt;
     g_node->min_dis.resize(pivot_cnt, vector<float>(pivot_cnt, FLT_MAX));
     g_node->max_dis.resize(pivot_cnt, vector<float>(pivot_cnt, 0));
-    cout << "G " << pivot_cnt << endl;
+//    cout << "G " << pivot_cnt << endl;
     vector<float> tmp_dis(pivot_cnt);   // 当前数据到各个支枢点的距离，tmp_dis[i]表示到第i个支枢点的距离
     vector<vector<int>> pivot_data(pivot_cnt);  // 分配给各个支枢点的数据的id，pivot_data[i]代表分配给第i个支枢点的数据的id
     vector<vector<vector<float>>> pivot_data_dist(pivot_cnt);    // 数据到分配的支枢点的距离，pivot_data_dist[i][x][j]代表分配给第i个支枢点的数据x，到第j个支枢点的距离
@@ -219,11 +219,11 @@ void MixTreeKmeans::crackG(Node *node, Node* pre_node, float *query, float query
         db->data[i] = data_tmp[i - g_node->start];
     }
 
-    cout << "split num:";
-    for (int i = 0; i < pivot_data.size(); i ++ ) {
-        cout << pivot_data[i].size() << " ";
-    }
-    cout << "| " << g_node->end - g_node->start + 1 << endl;
+//    cout << "split num:";
+//    for (int i = 0; i < pivot_data.size(); i ++ ) {
+//        cout << pivot_data[i].size() << " ";
+//    }
+//    cout << "| " << g_node->end - g_node->start + 1 << endl;
 }
 
 
